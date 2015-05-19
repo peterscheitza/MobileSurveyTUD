@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <ImageView
+        android:id="@+id/dialogImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:adjustViewBounds="true"
+        android:maxWidth="75dp"
+        android:maxHeight="75dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/athena"
+        android:contentDescription="@drawable/athena" />
+
+    <TextView
+        android:id="@+id/dialogText"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/dialogImage"/>
+
+    <Button
+        android:id="@+id/dialogGoToButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_below="@+id/dialogImage"
+        />
+
+    <Button
+        android:id="@+id/dialogExistButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:layout_marginRight="5dp"
+        android:layout_below="@+id/dialogImage"
+        android:layout_toRightOf="@+id/dialogGoToButton"/>
+        />
+
+</RelativeLayout>
