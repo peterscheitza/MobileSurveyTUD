@@ -165,7 +165,7 @@ public class MainService extends Service {
 
             showToast("MS: Please answer survey, bitch!");
 
-            showSystemAlert();
+            showSystemAlert(); //show dialog
 
             //reset parameter
             mMillsStart = -1;
