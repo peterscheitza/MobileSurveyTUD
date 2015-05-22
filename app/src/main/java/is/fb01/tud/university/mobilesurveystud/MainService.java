@@ -27,7 +27,6 @@ public class MainService extends Service {
 
     static final String TAG = "MainService";
 
-    private BroadcastReceiver mAccessBroadcasteReceiver;
     private BroadcastReceiver mPixelBroadcasteReceiver;
 
     private Handler mToastHandler;
@@ -36,7 +35,6 @@ public class MainService extends Service {
     private long mMillsEnd = -1;
 
     Intent mTouchDetectionService;
-    private boolean mIsTouchDetection = false;
 
     @Override
     public void onCreate() {
@@ -47,17 +45,6 @@ public class MainService extends Service {
 
         mToastHandler = new Handler();
 
-
-        mAccessBroadcasteReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.v(TAG,"onReceiveMessage from Accessibility Service");
-                handleAccessReceive(intent);
-            }
-        };
-        IntentFilter filterAccess = new IntentFilter(AccessDetectionService.MSG);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mAccessBroadcasteReceiver,filterAccess);
-
         mPixelBroadcasteReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -67,17 +54,17 @@ public class MainService extends Service {
         };
         IntentFilter filterPixel = new IntentFilter(TouchDetectionService.MSG);
         LocalBroadcastManager.getInstance(this).registerReceiver(mPixelBroadcasteReceiver,filterPixel);
+
+        startService(mTouchDetectionService);
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
 
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mAccessBroadcasteReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mPixelBroadcasteReceiver);
 
-        if(mIsTouchDetection)
-            stopService(mTouchDetectionService);
+        stopService(mTouchDetectionService);
     }
 
     @Override
@@ -86,75 +73,16 @@ public class MainService extends Service {
     }
 
 
+    private void handleTouchReceive(Intent intent) {
+        showToast("TD: I think you are inactive");
 
-    private void handleAccessReceive(Intent intent) {
+        mMillsStart = intent.getLongExtra("millsStart", -1);
+        mMillsEnd = intent.getLongExtra("millsEnd", -1);
 
-        boolean isNewAccessEvent = intent.getBooleanExtra("isNewAccessEvent", true);  //In default we want not throw to much
+        assert mMillsStart != -1;
+        assert mMillsEnd != -1;
 
-        if(isNewAccessEvent && mIsTouchDetection)
-            handleAccessStart();
-        else if(!isNewAccessEvent && !mIsTouchDetection)
-            handleAccessEnd(intent);
-        else
-            Log.v(TAG, "Ignore AccessSevice MSG");
-    }
-
-    private void handleAccessStart() {
-        if(mIsTouchDetection) {
-            Log.v(TAG, "Access event while touch detection");
-            //Here we need to stop the touch detection
-            //AccessService detected nothing -> TouchDetectService started -> new AccessEvent
-
-            Log.v(TAG, "Attempt to stop TouchDetectionService");
-            stopService(mTouchDetectionService);
-            mIsTouchDetection = false;
-        }
-        else {
-            Log.v(TAG, "Access event ignored. no touch detection");
-        }
-    }
-
-    private void handleAccessEnd(Intent intent) {
-        //showToast("AS: I think you are inactive");
-
-        if(!mIsTouchDetection) {
-
-            Log.v(TAG, "Attempt to start TouchDetectionService");
-            startService(mTouchDetectionService);
-
-            if (mMillsStart == -1) //only update if not set jet
-                mMillsStart = intent.getLongExtra("millsStart", -1);
-            mMillsEnd = intent.getLongExtra("millsEnd", -1);
-
-            assert mMillsStart != -1;
-            assert mMillsEnd != -1;
-
-            mIsTouchDetection = true;
-        }
-        else {
-            Log.v(TAG, "This should not happen");
-        }
-
-    }
-
-    private void handleTouchReceive(Intent intent){
-        Log.v(TAG, "Attempt to stop TouchDetectionService");
-        stopService(mTouchDetectionService);
-        mIsTouchDetection = false;
-
-        long newMillsEnd = intent.getLongExtra("millsEnd", -1);
-        assert  newMillsEnd != -1;
-        mMillsEnd = newMillsEnd;
-
-        boolean isTouched = intent.getBooleanExtra("isTouched",true); //In default we want not throw to much
-
-        if(!isTouched) {
-            //showToast("TD: I think you are inactive");
-            inactivityDetected();
-        }
-        //else means continue listening to AccessDetection
-
-        //TODO CASE: no access events after on touch
+        inactivityDetected();
     }
 
     private void inactivityDetected() {
@@ -166,12 +94,11 @@ public class MainService extends Service {
             showToast("MS: Please answer survey, bitch!");
 
             showSystemAlert(); //show dialog
-
-            //reset parameter
-            mMillsStart = -1;
-            mMillsEnd = -1;
-            mIsTouchDetection = false; //just to be sure
         }
+
+        //reset parameter
+        mMillsStart = -1;
+        mMillsEnd = -1;
     }
 
     private void showSystemAlert(){

@@ -9,6 +9,7 @@ import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -31,9 +32,11 @@ public class TouchDetectionService extends Service implements OnTouchListener {
     LocalBroadcastManager mBroadcaster;
 
     private Handler mEventHandler;
+    private Runnable mEventRunnable;
 
-    private boolean mTouched = false;
-    private long mStartTime = -1;
+    private long mMillsStart = -1;
+    private long mMillsEnd = -1;
+    private boolean mIsEventRunning = false;
 
     @Override
     public void onCreate() {
@@ -42,23 +45,23 @@ public class TouchDetectionService extends Service implements OnTouchListener {
 
         mBroadcaster  = LocalBroadcastManager.getInstance(this);
 
-        mStartTime = System.currentTimeMillis();
-
         mEventHandler = new Handler();
-        Runnable runner = new Runnable(){
+        mEventRunnable = new Runnable(){
             public void run() {
 
                 Log.v(TAG, "Broadcasting handler message");
 
-                Intent intent = new Intent("No touch detected");
+                Intent intent = new Intent("Stopped receiving accessibility events");
                 intent.setAction(MSG);
-                intent.putExtra("millsEnd", mStartTime); // nothing detected
-                intent.putExtra("isTouched", false);
+                intent.putExtra("millsStart", mMillsStart);
+                intent.putExtra("millsEnd", mMillsEnd);
+                intent.putExtra("isNewAccessEvent", false);
                 mBroadcaster.sendBroadcast(intent);
+
+                mIsEventRunning = false;
             }
         };
 
-        mEventHandler.postDelayed(runner, GlobalSettings.gTouchEventWait);
 
         mTouchLayout = new LinearLayout(this);
         mTouchLayout.setLayoutParams(new LayoutParams(xPixel, yPixel));
@@ -70,15 +73,16 @@ public class TouchDetectionService extends Service implements OnTouchListener {
         WindowManager.LayoutParams mParams = new WindowManager.LayoutParams(
                 xPixel,
                 yPixel,
-                WindowManager.LayoutParams.TYPE_PHONE, //Phone!
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT, //Phone!
                     //geht: TYPE_PHONE, TYPE_SYSTEM_ALERT
                     //geht nicht: TYPE_SYSTEM_OVERLAY
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                 //| WindowManager.LayoutParams.FLAG_LAYOUT_IN_OVERSCAN,
                 PixelFormat.TRANSLUCENT);
         mParams.gravity = Gravity.LEFT | Gravity.TOP;
-        mParams.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE | WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN;
+        mParams.softInputMode =  WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN | WindowManager.LayoutParams.SOFT_INPUT_STATE_UNCHANGED;
 
         mWindowManager.addView(mTouchLayout, mParams);
 
@@ -109,33 +113,21 @@ public class TouchDetectionService extends Service implements OnTouchListener {
 
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        //if(event.getAction() == MotionEvent.ACTION_DOWN || event.getAction() == MotionEvent.ACTION_UP || event.getAction() == MotionEvent.ACTION_OUTSIDE)
-          //  Log.i(TAG, "Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
 
-       if(!mTouched) {
-            if (event.getAction() == MotionEvent.ACTION_OUTSIDE) {
-                Log.i(TAG, "Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
-            } else {
-                Log.i(TAG, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
-            }
+        Log.i(TAG, "Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
 
-            mTouched = true;
-
+        if (mIsEventRunning) {
             mEventHandler.removeCallbacksAndMessages(null);
-
-            Log.v(TAG, "Broadcasting touch message");
-
-            Intent intent = new Intent("Detected touch event");
-            intent.setAction(MSG);
-            intent.putExtra("millsEnd", event.getEventTime());
-            intent.putExtra("isTouched", true);
-            mBroadcaster.sendBroadcast(intent);
+            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gAccessEventWait);
+            mMillsEnd = System.currentTimeMillis();
+        } else {
+            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gAccessEventWait);
+            mMillsStart = System.currentTimeMillis();
+            mMillsEnd = System.currentTimeMillis();
+            mIsEventRunning = true;
         }
 
         return false;
     }
-
-
-
 }
 
