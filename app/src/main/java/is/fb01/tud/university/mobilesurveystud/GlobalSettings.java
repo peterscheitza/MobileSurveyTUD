@@ -5,8 +5,8 @@ package is.fb01.tud.university.mobilesurveystud;
  */
 public class GlobalSettings {
 
-    final static int gAccessEventWait = 30000; // 30 Seconds
-    final static int gMinUseDuration = 120000; // 60 Seconds
+    final static int gAccessEventWait   = 30000; // 30 Seconds
+    final static int gMinUseDuration    = 60000; // 60 Seconds
 
     final static String gDialogHead = "Dialog head: Hello asshole";
     final static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey you useless bitch";
