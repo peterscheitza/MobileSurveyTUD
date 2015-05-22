@@ -1,6 +1,7 @@
 package is.fb01.tud.university.mobilesurveystud;
 
 import android.app.Dialog;
+import android.app.KeyguardManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -9,6 +10,7 @@ import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.PowerManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.Gravity;
@@ -28,13 +30,17 @@ public class MainService extends Service {
     static final String TAG = "MainService";
 
     private BroadcastReceiver mPixelBroadcasteReceiver;
+    private BroadcastReceiver mPowerButtonReceiver;
 
     private Handler mToastHandler;
+
+    PowerManager.WakeLock mWakeLock;
 
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
 
     Intent mTouchDetectionService;
+    Intent mButtonDetectionService;
 
     @Override
     public void onCreate() {
@@ -44,6 +50,7 @@ public class MainService extends Service {
         mTouchDetectionService = new Intent(this, TouchDetectionService.class);
 
         mToastHandler = new Handler();
+
 
         mPixelBroadcasteReceiver = new BroadcastReceiver() {
             @Override
@@ -55,7 +62,27 @@ public class MainService extends Service {
         IntentFilter filterPixel = new IntentFilter(TouchDetectionService.MSG);
         LocalBroadcastManager.getInstance(this).registerReceiver(mPixelBroadcasteReceiver,filterPixel);
 
+
+        mPowerButtonReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.v(TAG,"onReceiveMessage from Screen");
+                handlePowerButton(intent);
+            }
+        };
+
+        IntentFilter filterOnOff = new IntentFilter();
+        filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
+        //filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(mPowerButtonReceiver,filterOnOff);
+
+
         startService(mTouchDetectionService);
+    }
+
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        return START_STICKY;
     }
 
     @Override
@@ -63,6 +90,7 @@ public class MainService extends Service {
         super.onDestroy();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mPixelBroadcasteReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mPowerButtonReceiver);
 
         stopService(mTouchDetectionService);
     }
@@ -85,8 +113,26 @@ public class MainService extends Service {
         inactivityDetected();
     }
 
-    private void inactivityDetected() {
+    private void handlePowerButton(Intent intent){
+
+        Log.v(TAG,"POWER");
+
+        boolean isAlterShown = inactivityDetected();
+
+        //wakeDevice();
+        showActivity();
+
+        if(isAlterShown) {
+
+        }
+    }
+
+    private boolean inactivityDetected() {
         long activityDuration = mMillsEnd - mMillsStart;
+
+        //reset parameter
+        mMillsStart = -1;
+        mMillsEnd = -1;
 
         if (activityDuration > GlobalSettings.gMinUseDuration) {
             Log.v(TAG, "MS: I would show you the Invitation");
@@ -94,11 +140,32 @@ public class MainService extends Service {
             showToast("MS: Please answer survey, bitch!");
 
             showSystemAlert(); //show dialog
+
+            return true;
         }
 
-        //reset parameter
-        mMillsStart = -1;
-        mMillsEnd = -1;
+        return false;
+    }
+
+    public void wakeDevice() {
+
+        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
+        mWakeLock = powerManager.newWakeLock(
+                PowerManager.ACQUIRE_CAUSES_WAKEUP
+                        | PowerManager.PARTIAL_WAKE_LOCK,
+                "UselessWakeTag");
+        mWakeLock.acquire();
+
+        Log.v(TAG, "WAKEUP");
+
+    }
+
+    private void showActivity() {
+        Intent i = new Intent(this, DialogActivity.class);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(i);
+
+        Log.v(TAG,"STARTED");
     }
 
     private void showSystemAlert(){

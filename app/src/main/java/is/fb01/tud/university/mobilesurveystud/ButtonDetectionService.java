@@ -17,7 +17,7 @@ public class ButtonDetectionService extends Service {
     static final public String TAG = "ButtonService";
     static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
 
-    private BroadcastReceiver mOnOffButtonReceiver;
+    private BroadcastReceiver mPowerButtonReceiver;
 
     @Override
     public void onCreate() {
@@ -25,24 +25,28 @@ public class ButtonDetectionService extends Service {
         Log.v(TAG,"onServiceConnected");
 
 
-        mOnOffButtonReceiver = new BroadcastReceiver() {
+        mPowerButtonReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
+                handlePowerButton(intent);
                 Log.v(TAG,"onReceiveMessage from Touch Service");
             }
         };
 
         IntentFilter filterOnOff = new IntentFilter();
         filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
-        filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mOnOffButtonReceiver,filterOnOff);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mPowerButtonReceiver,filterOnOff);
 
     }
-
 
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+
+    private void handlePowerButton(Intent intent){
+
     }
 }
 

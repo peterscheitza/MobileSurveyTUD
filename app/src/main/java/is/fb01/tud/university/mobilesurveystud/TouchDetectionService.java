@@ -1,6 +1,7 @@
 package is.fb01.tud.university.mobilesurveystud;
 
 import android.app.Service;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
@@ -67,6 +68,7 @@ public class TouchDetectionService extends Service implements OnTouchListener {
         mTouchLayout.setLayoutParams(new LayoutParams(xPixel, yPixel));
         mTouchLayout.setBackgroundColor(Color.CYAN);
         mTouchLayout.setOnTouchListener(this);
+        //mTouchLayout.setOnKeyListener(this);
 
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
 
@@ -129,5 +131,31 @@ public class TouchDetectionService extends Service implements OnTouchListener {
 
         return false;
     }
+
+    /*@Override
+    public boolean onKey(View v, int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            Log.v(TAG,"back");
+            //return true;
+        }
+        else  if (keyCode == KeyEvent.KEYCODE_HOME) {
+            Log.v(TAG,"home");
+            //return true;
+        }
+        else  if (keyCode == KeyEvent.KEYCODE_SETTINGS) {
+            Log.v(TAG,"settings");
+            //return true;
+        }
+        else  if (keyCode == KeyEvent.KEYCODE_APP_SWITCH) {
+            Log.v(TAG,"switch");
+            //return true;
+        }
+        else
+        {
+            Log.v(TAG,event.toString());
+        }
+
+        return true;
+    }*/
 }
 
