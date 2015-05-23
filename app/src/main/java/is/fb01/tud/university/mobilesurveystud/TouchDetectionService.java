@@ -52,14 +52,12 @@ public class TouchDetectionService extends Service implements OnTouchListener {
 
                 Log.v(TAG, "Broadcasting handler message");
 
-                Intent intent = new Intent("Stopped receiving accessibility events");
-                intent.setAction(MSG);
-                intent.putExtra("millsStart", mMillsStart);
-                intent.putExtra("millsEnd", mMillsEnd);
-                intent.putExtra("isNewAccessEvent", false);
-                mBroadcaster.sendBroadcast(intent);
+                sendBroadcast();
 
+                //reset Parameter
                 mIsEventRunning = false;
+                mMillsStart = -1;
+                mMillsEnd = -1;
             }
         };
 
@@ -96,6 +94,8 @@ public class TouchDetectionService extends Service implements OnTouchListener {
     public void onDestroy() {
         Log.v(TAG, "onServiceDisconnected");
 
+        sendBroadcast();
+
         if(mWindowManager != null) {
             if(mTouchLayout != null) {
                 mWindowManager.removeView(mTouchLayout);
@@ -120,16 +120,26 @@ public class TouchDetectionService extends Service implements OnTouchListener {
 
         if (mIsEventRunning) {
             mEventHandler.removeCallbacksAndMessages(null);
-            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gAccessEventWait);
+            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
             mMillsEnd = System.currentTimeMillis();
         } else {
-            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gAccessEventWait);
+            Log.v(TAG, "starting to detect touches");
+            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
             mMillsStart = System.currentTimeMillis();
             mMillsEnd = System.currentTimeMillis();
             mIsEventRunning = true;
         }
 
         return false;
+    }
+
+    private void sendBroadcast(){
+        Intent intent = new Intent("Stopped receiving accessibility events");
+        intent.setAction(MSG);
+        intent.putExtra("millsStart", mMillsStart);
+        intent.putExtra("millsEnd", mMillsEnd);
+        intent.putExtra("isNewAccessEvent", false);
+        mBroadcaster.sendBroadcast(intent);
     }
 
     /*@Override

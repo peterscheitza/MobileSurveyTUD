@@ -5,7 +5,7 @@ package is.fb01.tud.university.mobilesurveystud;
  */
 public class GlobalSettings {
 
-    final static int gAccessEventWait   = 30000; // 30 Seconds
+    final static int gTouchEventWait   = 30000; // 30 Seconds
     final static int gMinUseDuration    = 60000; // 60 Seconds
 
     final static String gDialogHead = "Dialog head: Hello asshole";

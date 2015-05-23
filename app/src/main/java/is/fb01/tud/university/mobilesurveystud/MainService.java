@@ -31,15 +31,19 @@ public class MainService extends Service {
 
     private BroadcastReceiver mPixelBroadcasteReceiver;
     private BroadcastReceiver mPowerButtonReceiver;
+    private BroadcastReceiver mDialogReceiver;
+    private BroadcastReceiver waitForUnlockReceiver;
 
     private Handler mToastHandler;
 
-    PowerManager.WakeLock mWakeLock;
+    private PowerManager.WakeLock mWakeLock;
 
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
 
-    Intent mTouchDetectionService;
+    private boolean isScreenOn = true;
+
+    private Intent mTouchDetectionService;
     Intent mButtonDetectionService;
 
     @Override
@@ -55,26 +59,36 @@ public class MainService extends Service {
         mPixelBroadcasteReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.v(TAG,"onReceiveMessage from Touch Service");
+                Log.v(TAG,"onReceiveMessage from Touch Service: " + intent.toString());
                 handleTouchReceive(intent);
             }
         };
         IntentFilter filterPixel = new IntentFilter(TouchDetectionService.MSG);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mPixelBroadcasteReceiver,filterPixel);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mPixelBroadcasteReceiver, filterPixel);
 
 
         mPowerButtonReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                Log.v(TAG,"onReceiveMessage from Screen");
+                Log.v(TAG,"onReceiveMessage from Screen: " + intent.toString() );
                 handlePowerButton(intent);
             }
         };
 
         IntentFilter filterOnOff = new IntentFilter();
         filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
-        //filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
-        registerReceiver(mPowerButtonReceiver,filterOnOff);
+        filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(mPowerButtonReceiver, filterOnOff);
+
+        mDialogReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.v(TAG,"onReceiveMessage from Lock Screen Activity");
+                handleShowSurveyFromLockScreen(intent);
+            }
+        };
+        IntentFilter filterDialogActivity = new IntentFilter(DialogActivity.MSG);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mDialogReceiver, filterDialogActivity);
 
 
         startService(mTouchDetectionService);
@@ -89,8 +103,10 @@ public class MainService extends Service {
     public void onDestroy() {
         super.onDestroy();
 
+        //LocalBroadcastManager.getInstance(this)....
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mPixelBroadcasteReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mPowerButtonReceiver);
+        unregisterReceiver(this.mPowerButtonReceiver);
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
         stopService(mTouchDetectionService);
     }
@@ -110,36 +126,60 @@ public class MainService extends Service {
         assert mMillsStart != -1;
         assert mMillsEnd != -1;
 
-        inactivityDetected();
-    }
-
-    private void handlePowerButton(Intent intent){
-
-        Log.v(TAG,"POWER");
-
-        boolean isAlterShown = inactivityDetected();
-
-        //wakeDevice();
-        showActivity();
-
-        if(isAlterShown) {
-
+        if(isShowADialog()) {
+            if(isScreenOn)
+                showSystemAlert();
+            else
+                showActivity();
         }
     }
 
-    private boolean inactivityDetected() {
+    private void handlePowerButton(Intent intent){
+        Log.v(TAG,"screen turned off/on");
+
+        if(intent.getAction() == Intent.ACTION_SCREEN_OFF) {
+            isScreenOn = false;
+            stopService(mTouchDetectionService);
+        }
+        else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
+            isScreenOn = true;
+            startService(mTouchDetectionService);
+        }
+    }
+
+    private void handleShowSurveyFromLockScreen(Intent intent) {
+         waitForUnlockReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.v(TAG,"onReceiveMessage from user present");
+
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(GlobalSettings.gSurveyURL));
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(i);
+
+                unregisterReceiver(waitForUnlockReceiver);
+            }
+        };
+
+        IntentFilter filterUserPresent = new IntentFilter();
+        filterUserPresent.addAction(Intent.ACTION_USER_PRESENT);
+        registerReceiver(waitForUnlockReceiver,filterUserPresent);
+    }
+
+
+
+    private boolean isShowADialog() {
         long activityDuration = mMillsEnd - mMillsStart;
 
         //reset parameter
         mMillsStart = -1;
         mMillsEnd = -1;
 
+        Log.v(TAG, "activityDuration: " +activityDuration);
+
         if (activityDuration > GlobalSettings.gMinUseDuration) {
-            Log.v(TAG, "MS: I would show you the Invitation");
-
             showToast("MS: Please answer survey, bitch!");
-
-            showSystemAlert(); //show dialog
 
             return true;
         }
@@ -161,11 +201,11 @@ public class MainService extends Service {
     }
 
     private void showActivity() {
+        Log.v(TAG, "show dialog activity");
+
         Intent i = new Intent(this, DialogActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
-
-        Log.v(TAG,"STARTED");
     }
 
     private void showSystemAlert(){
@@ -214,5 +254,6 @@ public class MainService extends Service {
                 toast.show();
             }
         });
+        Log.v(TAG,sOutput);
     }
 }

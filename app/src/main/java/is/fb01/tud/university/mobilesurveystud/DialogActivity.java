@@ -3,6 +3,7 @@ package is.fb01.tud.university.mobilesurveystud;
 import android.app.Activity;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
@@ -10,17 +11,26 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
+import android.util.Log;
 
 
 public class DialogActivity extends ActionBarActivity {
+
+    static final public String TAG = "DialogActivity";
+    static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
+
+    LocalBroadcastManager mBroadcaster;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_dialog);
+
+        mBroadcaster  = LocalBroadcastManager.getInstance(this);
 
         //getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         //getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
@@ -40,10 +50,18 @@ public class DialogActivity extends ActionBarActivity {
         activityGoToButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent i = new Intent(Intent.ACTION_VIEW);
+                /*Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setData(Uri.parse(GlobalSettings.gSurveyURL));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                startActivity(i);*/
+
+                Log.v(TAG, "say Service to open browser on unlock");
+
+                Intent intent = new Intent("Open browser after unlock");
+                intent.setAction(MSG);
+                mBroadcaster.sendBroadcast(intent);
+
+                finish();
             }
         });
 
@@ -54,8 +72,15 @@ public class DialogActivity extends ActionBarActivity {
             }
         });
 
-        //WebView activityWebView = (WebView) findViewById(R.id.ActivityWebView);
-        //activityWebView.loadUrl(GlobalSettings.gSurveyURL);
+        WebView activityWebView = (WebView) findViewById(R.id.ActivityWebView);
+        activityWebView.getSettings().setJavaScriptEnabled(true);
+        activityWebView.setWebViewClient(new WebViewClient() {
+            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                Log.v(TAG,"Oh no! " + description);
+            }
+        });
+
+        activityWebView.loadUrl(GlobalSettings.gSurveyURL);
     }
 
     @Override

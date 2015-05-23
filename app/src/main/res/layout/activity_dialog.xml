@@ -41,7 +41,7 @@
         android:layout_below="@+id/ActivityImage"
         android:layout_toRightOf="@+id/ActivityGoToButton"/>
 
-    <!--<WebView
+    <WebView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/ActivityWebView"
@@ -51,6 +51,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignRight="@+id/ActivityText"
         android:layout_alignEnd="@+id/ActivityText" />
-    />-->
+    />
 
 </RelativeLayout>

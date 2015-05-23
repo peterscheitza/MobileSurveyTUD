@@ -89,9 +89,9 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    public void buttonGoToSettings(View v) {
+    /*public void buttonGoToSettings(View v) {
         startActivityForResult(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS), 0);
-    }
+    }*/
 
 
     private boolean isServiceRunning(Class<?> serviceClass) {
