@@ -47,6 +47,7 @@ public class MainService extends Service {
     private boolean isScreenOn = true;
 
     private Intent mTouchDetectionService;
+    private Intent mAcceleromterService;
     Intent mButtonDetectionService;
 
     @Override
@@ -55,6 +56,7 @@ public class MainService extends Service {
         Log.v(TAG,"onServiceConnected");
 
         mTouchDetectionService = new Intent(this, TouchDetectionService.class);
+        mAcceleromterService = new Intent(this, AccelerometerService.class);
 
         mToastHandler = new Handler();
 
@@ -95,6 +97,7 @@ public class MainService extends Service {
 
 
         startService(mTouchDetectionService);
+        startService(mAcceleromterService);
     }
 
     @Override
@@ -112,6 +115,7 @@ public class MainService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
         stopService(mTouchDetectionService);
+        stopService(mAcceleromterService);
     }
 
     @Override
