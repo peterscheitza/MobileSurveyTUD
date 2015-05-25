@@ -216,13 +216,19 @@ public class MainService extends Service {
     }
 
     private void showActivity() {
-        showNotification();
-
         Log.v(TAG, "show dialog activity");
 
         Intent i = new Intent(this, DialogActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
+
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                showNotification(); //may move into DialogActivity onResume
+            }};
+        Handler mHandler = new Handler();
+        mHandler.postDelayed(r, 2000); //1 second to load activity
     }
 
     private void showSystemAlert(){

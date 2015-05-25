@@ -1,7 +1,12 @@
 package is.fb01.tud.university.mobilesurveystud;
 
 import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
@@ -73,14 +78,20 @@ public class DialogActivity extends ActionBarActivity {
         });
 
         WebView activityWebView = (WebView) findViewById(R.id.ActivityWebView);
-        activityWebView.getSettings().setJavaScriptEnabled(true);
-        activityWebView.setWebViewClient(new WebViewClient() {
-            public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                Log.v(TAG,"Oh no! " + description);
-            }
-        });
 
-        activityWebView.loadUrl(GlobalSettings.gSurveyURL);
+        if(isOnline()) {
+            activityWebView.getSettings().setJavaScriptEnabled(true);
+            activityWebView.setWebViewClient(new WebViewClient() {
+                public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                    Log.v(TAG, "Oh no! " + description);
+                }
+            });
+
+            activityWebView.loadUrl(GlobalSettings.gSurveyURL);
+        }
+        else {
+            activityWebView.setVisibility(View.GONE);
+        }
     }
 
     @Override
@@ -90,5 +101,12 @@ public class DialogActivity extends ActionBarActivity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+    }
+
+    private boolean isOnline() {
+        ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+
+       return (netInfo != null && netInfo.isConnected());
     }
 }
