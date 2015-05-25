@@ -2,12 +2,15 @@ package is.fb01.tud.university.mobilesurveystud;
 
 import android.app.Dialog;
 import android.app.KeyguardManager;
+import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
+import android.media.RingtoneManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -200,7 +203,21 @@ public class MainService extends Service {
 
     }
 
+    private void showNotification(){
+        Log.v(TAG, "notification");
+
+        Notification notification  = new Notification.Builder(this).build();
+        notification.defaults =  Notification.DEFAULT_ALL;
+
+        NotificationManager notificationManager =
+                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+
+        notificationManager.notify(0, notification);
+    }
+
     private void showActivity() {
+        showNotification();
+
         Log.v(TAG, "show dialog activity");
 
         Intent i = new Intent(this, DialogActivity.class);
@@ -209,6 +226,10 @@ public class MainService extends Service {
     }
 
     private void showSystemAlert(){
+        showNotification();
+
+        Log.v(TAG, "show dialog");
+
         final Dialog dialog = new Dialog(this);
 
         dialog.setContentView(R.layout.dialog);

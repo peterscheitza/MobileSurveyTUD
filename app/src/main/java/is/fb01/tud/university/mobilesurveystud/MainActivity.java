@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.provider.Settings;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
@@ -77,16 +78,34 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void buttonToggleService(View v){
+
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
         if(isServiceRunning(MainService.class)){
             stopService(mMainService);
             ((Button)v).setText("Start Service");
             Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.is_active), GlobalSettings.ServiceStates.OFF.toString());
         }
         else{
             startService(mMainService);
             ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.is_active), GlobalSettings.ServiceStates.ON.toString());
         }
+
+        editor.commit();
+
+
+        SharedPreferences sharedPref2 = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+
+        String optioneName = getString(R.string.is_active);
+        String lastSavedState = sharedPref2.getString(optioneName, GlobalSettings.ServiceStates.UNDEFINED.toString());
+
+        Log.v(TAG,lastSavedState);
     }
 
     /*public void buttonGoToSettings(View v) {

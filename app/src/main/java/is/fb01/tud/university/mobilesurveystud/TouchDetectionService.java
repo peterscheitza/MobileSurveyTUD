@@ -24,8 +24,8 @@ public class TouchDetectionService extends Service implements OnTouchListener {
     static final public String TAG = "TouchService";
     static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
 
-    private final int xPixel = 1;
-    private final int yPixel = 1;
+    private final int xPixel = 10;
+    private final int yPixel = 10;
 
     private WindowManager mWindowManager;
     private LinearLayout mTouchLayout;
@@ -122,6 +122,7 @@ public class TouchDetectionService extends Service implements OnTouchListener {
             mEventHandler.removeCallbacksAndMessages(null);
             mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
             mMillsEnd = System.currentTimeMillis();
+            togglePixelColor();
         } else {
             Log.v(TAG, "starting to detect touches");
             mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
@@ -140,6 +141,16 @@ public class TouchDetectionService extends Service implements OnTouchListener {
         intent.putExtra("millsEnd", mMillsEnd);
         intent.putExtra("isNewAccessEvent", false);
         mBroadcaster.sendBroadcast(intent);
+    }
+
+    private void togglePixelColor(){
+
+        if(mMillsEnd-mMillsStart > GlobalSettings.gMinUseDuration)
+            mTouchLayout.setBackgroundColor(Color.GREEN);
+        else
+            mTouchLayout.setBackgroundColor(Color.CYAN);
+
+        mTouchLayout.invalidate();
     }
 
     /*@Override
