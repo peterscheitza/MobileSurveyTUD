@@ -6,6 +6,8 @@ package is.fb01.tud.university.mobilesurveystud;
 public class GlobalSettings {
 
     final static int gTouchEventWait   = 30000; // 30 Seconds
+    final static int gGyroEventWait   = 30000; // 30 Seconds
+    final static int gGyroThreshold = 30; //need to be adjusted when gGyroEventChanges
     final static int gMinUseDuration    = 30000; // 2min
 
     final static String gDialogHead = "Dialog head: Hello asshole";

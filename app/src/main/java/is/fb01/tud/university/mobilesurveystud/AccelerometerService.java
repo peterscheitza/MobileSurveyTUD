@@ -23,9 +23,12 @@ public class AccelerometerService extends Service implements SensorEventListener
     private Sensor mAcceleromter;
 
     private long mLastUpdate;
-    private float mAccel; // acceleration apart from gravity
-    private float mAccelCurrent; // current acceleration including gravity
-    private float mAccelLast; // last acceleration including gravity
+
+    private double mMotionSumm = 0.00f;
+
+    private double mLastX = 0.0f;
+    private double mLastY = 0.0f;
+    private double mLastZ = 0.0f;
 
     @Override
     public final void onCreate() {
@@ -34,13 +37,9 @@ public class AccelerometerService extends Service implements SensorEventListener
         Log.v(TAG, "onServiceConnected");
 
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
-        mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
-        mSensorManager.registerListener(this,mAcceleromter,SensorManager.SENSOR_DELAY_NORMAL);
-
-        mAccel = 0.00f;
-        mAccelCurrent = SensorManager.GRAVITY_EARTH;
-        mAccelLast = SensorManager.GRAVITY_EARTH;
+        mSensorManager.registerListener(this,mAcceleromter,SensorManager.SENSOR_DELAY_GAME);
     }
 
 
@@ -61,50 +60,33 @@ public class AccelerometerService extends Service implements SensorEventListener
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        if (event.sensor.getType()  == Sensor.TYPE_ACCELEROMETER) {
 
-            long curTime = System.currentTimeMillis();
-            long diffTime = (curTime - mLastUpdate);
+        long curTime = System.currentTimeMillis();
+        long diffTime = (curTime - mLastUpdate);
 
-            if (diffTime < 100)
-                return;
-
+        if (diffTime > GlobalSettings.gTouchEventWait) {
             mLastUpdate = curTime;
-
-            float x = event.values[0];
-            float y = event.values[1];
-            float z = event.values[2];
-
-            mAccelLast = mAccelCurrent;
-            mAccelCurrent = (float) Math.sqrt((double) (x * x + y * y + z * z));
-            float delta = mAccelCurrent - mAccelLast;
-            mAccel = mAccel * 0.9f + delta;
-
-
-            if (mAccel > 12) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Device has shaken. Level: 12", Toast.LENGTH_LONG);
-                toast.show();
-                return;
-            }
-
-            if (mAccel > 10) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Device has shaken. Level: 10", Toast.LENGTH_LONG);
-                toast.show();
-                return;
-            }
-
-            if (mAccel > 8) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Device has shaken. Level: 8", Toast.LENGTH_LONG);
-                toast.show();
-                return;
-            }
-
-            if (mAccel > 6) {
-                Toast toast = Toast.makeText(getApplicationContext(), "Device has shaken. Level: 6", Toast.LENGTH_LONG);
-                toast.show();
-                return;
-            }
+            Log.v(TAG, "" + mMotionSumm);
+            mMotionSumm = 0.0f;
         }
+
+        float x = event.values[0];
+        float y = event.values[1];
+        float z = event.values[2];
+
+        double xAbs = Math.toDegrees(Math.asin(x/SensorManager.GRAVITY_EARTH));
+        double yAbs = Math.toDegrees(Math.asin(y/SensorManager.GRAVITY_EARTH));
+        double zAbs = Math.toDegrees(Math.asin(z/SensorManager.GRAVITY_EARTH));
+
+        double movedX = Math.abs(xAbs - mLastX);
+        double movedY = Math.abs(yAbs - mLastY);
+        double movedZ = Math.abs(zAbs - mLastZ);
+
+        mMotionSumm += movedX + movedY + movedZ;
+
+        mLastX = xAbs;
+        mLastY = yAbs;
+        mLastZ = zAbs;
     }
 
     @Override

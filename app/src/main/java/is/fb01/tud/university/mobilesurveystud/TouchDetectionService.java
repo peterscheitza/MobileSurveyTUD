@@ -49,9 +49,6 @@ public class TouchDetectionService extends Service implements OnTouchListener {
         mEventHandler = new Handler();
         mEventRunnable = new Runnable(){
             public void run() {
-
-                Log.v(TAG, "Broadcasting handler message");
-
                 sendBroadcast();
 
                 //reset Parameter
@@ -124,7 +121,7 @@ public class TouchDetectionService extends Service implements OnTouchListener {
             mMillsEnd = System.currentTimeMillis();
             togglePixelColor();
         } else {
-            Log.v(TAG, "starting to detect touches");
+            Log.v(TAG, "starting to detect some touches");
             mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
             mMillsStart = System.currentTimeMillis();
             mMillsEnd = System.currentTimeMillis();
@@ -135,6 +132,8 @@ public class TouchDetectionService extends Service implements OnTouchListener {
     }
 
     private void sendBroadcast(){
+        Log.v(TAG, "Broadcasting handler message");
+
         Intent intent = new Intent("Stopped receiving accessibility events");
         intent.setAction(MSG);
         intent.putExtra("millsStart", mMillsStart);

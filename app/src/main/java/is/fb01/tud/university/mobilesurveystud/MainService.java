@@ -1,7 +1,6 @@
 package is.fb01.tud.university.mobilesurveystud;
 
 import android.app.Dialog;
-import android.app.KeyguardManager;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
@@ -9,18 +8,15 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.graphics.Color;
-import android.media.RingtoneManager;
+import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
@@ -33,6 +29,7 @@ public class MainService extends Service {
     static final String TAG = "MainService";
 
     private BroadcastReceiver mPixelBroadcasteReceiver;
+    private BroadcastReceiver mGyroBroadcasteReceiver;
     private BroadcastReceiver mPowerButtonReceiver;
     private BroadcastReceiver mDialogReceiver;
     private BroadcastReceiver waitForUnlockReceiver;
@@ -43,12 +40,16 @@ public class MainService extends Service {
 
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
-
     private boolean isScreenOn = true;
+    private boolean mIsHighMovement = false;
 
     private Intent mTouchDetectionService;
     private Intent mAcceleromterService;
-    Intent mButtonDetectionService;
+    private Intent mGyroService;
+
+    GlobalSettings.ServiceStates gyroState = GlobalSettings.ServiceStates.UNDEFINED;
+
+    private Intent mButtonDetectionService;
 
     @Override
     public void onCreate() {
@@ -57,10 +58,17 @@ public class MainService extends Service {
 
         mTouchDetectionService = new Intent(this, TouchDetectionService.class);
         mAcceleromterService = new Intent(this, AccelerometerService.class);
+        mGyroService = new Intent(this, GyroscopeService.class);
 
         mToastHandler = new Handler();
 
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+        String optioneName = getString(R.string.is_gyro);
+        String sGyroState = sharedPref.getString(optioneName, GlobalSettings.ServiceStates.UNDEFINED.toString());
+        gyroState = GlobalSettings.ServiceStates.valueOf(sGyroState);
 
+
+        //Standard Receiver registration
         mPixelBroadcasteReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -79,7 +87,6 @@ public class MainService extends Service {
                 handlePowerButton(intent);
             }
         };
-
         IntentFilter filterOnOff = new IntentFilter();
         filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
         filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
@@ -95,9 +102,24 @@ public class MainService extends Service {
         IntentFilter filterDialogActivity = new IntentFilter(DialogActivity.MSG);
         LocalBroadcastManager.getInstance(this).registerReceiver(mDialogReceiver, filterDialogActivity);
 
-
         startService(mTouchDetectionService);
-        startService(mAcceleromterService);
+
+
+        //Gyro attach
+        if(gyroState == GlobalSettings.ServiceStates.ON) {
+
+            mGyroBroadcasteReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    Log.v(TAG,"onReceiveMessage from Gyro Service: " + intent.toString());
+                    handleGyroReceive(intent);
+                }
+            };
+            IntentFilter filterGyro = new IntentFilter(GyroscopeService.MSG);
+            LocalBroadcastManager.getInstance(this).registerReceiver(mGyroBroadcasteReceiver, filterGyro);
+
+            startService(mGyroService);
+        }
     }
 
     @Override
@@ -115,7 +137,11 @@ public class MainService extends Service {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
         stopService(mTouchDetectionService);
-        stopService(mAcceleromterService);
+
+        if(gyroState == GlobalSettings.ServiceStates.ON) {
+            LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mGyroBroadcasteReceiver);
+            stopService(mGyroService);
+        }
     }
 
     @Override
@@ -133,12 +159,7 @@ public class MainService extends Service {
         assert mMillsStart != -1;
         assert mMillsEnd != -1;
 
-        if(isShowADialog()) {
-            if(isScreenOn)
-                showSystemAlert();
-            else
-                showActivity();
-        }
+        isShowADialog();
     }
 
     private void handlePowerButton(Intent intent){
@@ -147,10 +168,12 @@ public class MainService extends Service {
         if(intent.getAction() == Intent.ACTION_SCREEN_OFF) {
             isScreenOn = false;
             stopService(mTouchDetectionService);
+            stopService(mGyroService);
         }
         else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
             isScreenOn = true;
             startService(mTouchDetectionService);
+            startService(mGyroService);
         }
     }
 
@@ -174,24 +197,47 @@ public class MainService extends Service {
         registerReceiver(waitForUnlockReceiver,filterUserPresent);
     }
 
+    private void handleGyroReceive(Intent intent) {
+        mIsHighMovement = intent.getBooleanExtra("movementDetected", false);
+        if(mIsHighMovement) {
+            showToast("GD: I think you shaking a lot");
+
+            if(mMillsStart == -1)
+                mMillsStart = System.currentTimeMillis();
+            mMillsEnd = System.currentTimeMillis();
+        }
+        else {
+            showToast("GD: I think you are inactive");
+
+            isShowADialog();
+        }
+    }
 
 
     private boolean isShowADialog() {
         long activityDuration = mMillsEnd - mMillsStart;
 
-        //reset parameter
-        mMillsStart = -1;
-        mMillsEnd = -1;
-
         Log.v(TAG, "activityDuration: " +activityDuration);
 
-        if (activityDuration > GlobalSettings.gMinUseDuration) {
+        if (activityDuration > GlobalSettings.gMinUseDuration && !mIsHighMovement) {
             showToast("MS: Please answer survey, bitch!");
+
+            resetParameter();
+
+            if(isScreenOn)
+                showSystemAlert();
+            else
+                showActivity();
 
             return true;
         }
-
         return false;
+    }
+
+    private void resetParameter(){
+        mMillsStart = -1;
+        mMillsEnd = -1;
+        mIsHighMovement = false;
     }
 
     public void wakeDevice() {

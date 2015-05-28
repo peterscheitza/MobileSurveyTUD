@@ -16,6 +16,16 @@
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true" />
 
+    <Button
+        android:id="@+id/gyroToggleService"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Start Gyro Service"
+        android:onClick="buttonToggleGyro"
+        android:layout_below="@+id/mainToggleService"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
     <!--<Button
         android:id="@+id/mainGoToButton"
         android:layout_width="wrap_content"

@@ -63,18 +63,25 @@ public class MainActivity extends ActionBarActivity {
     public void onResume(){
         super.onResume();
 
+        /*
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);*/
 
-        Button toggleDetectionButton = (Button) findViewById(R.id.mainToggleService);
+        Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
+        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
 
-        if(isServiceRunning(MainService.class)) {
-            toggleDetectionButton.setText("Stop Service");
-        }
-        else {
-            toggleDetectionButton.setText("Start Service");
-        }
+        if(isServiceRunning(MainService.class))
+            toggleMainButton.setText("Stop Service");
+        else
+            toggleMainButton.setText("Start Service");
+
+        if(isServiceRunning(GyroscopeService.class))
+            toggleGyroButton.setText("Stop Gyro Service");
+        else
+            toggleGyroButton.setText("Start Gyro Service");
+
+
     }
 
     public void buttonToggleService(View v){
@@ -88,6 +95,7 @@ public class MainActivity extends ActionBarActivity {
             Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.is_active), GlobalSettings.ServiceStates.OFF.toString());
+            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.OFF.toString());
         }
         else{
             startService(mMainService);
@@ -108,9 +116,31 @@ public class MainActivity extends ActionBarActivity {
         Log.v(TAG,lastSavedState);
     }
 
-    /*public void buttonGoToSettings(View v) {
-        startActivityForResult(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS), 0);
-    }*/
+    public void buttonToggleGyro(View v){
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
+
+        if(isServiceRunning(GyroscopeService.class)){
+            ((Button)v).setText("Start Gyro Service");
+            Toast.makeText(this, "Stop Gyro Service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.OFF.toString());
+        }
+        else{
+            startService(mMainService);
+            ((Button)v).setText("Stop Gyro Service");
+            Toast.makeText(this, "Start Gyro Service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.ON.toString());
+        }
+
+
+        //restart to toggle Gyro
+        stopService(mMainService);
+        startService(mMainService);
+
+        editor.commit();
+    }
 
 
     private boolean isServiceRunning(Class<?> serviceClass) {

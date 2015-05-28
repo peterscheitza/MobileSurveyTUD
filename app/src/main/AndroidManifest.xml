@@ -49,6 +49,9 @@
         <service android:name=".AccelerometerService" >
         </service>
 
+        <service android:name=".GyroscopeService" >
+        </service>
+
     </application>
 
 </manifest>
