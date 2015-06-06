@@ -14,20 +14,21 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 /**
  * Created by peter_000 on 25.05.2015.
  */
-public class AccelerometerService extends Service implements SensorEventListener {
+public class AccelerometerService extends SensorDetectorServiceBase implements SensorEventListener {
 
     static final public String TAG = "AccelService";
 
     private SensorManager mSensorManager;
     private Sensor mAcceleromter;
 
-    private long mLastUpdate;
-
-    private double mMotionSumm = 0.00f;
-
     private double mLastX = 0.0f;
     private double mLastY = 0.0f;
     private double mLastZ = 0.0f;
+
+    @Override
+    public String getTag() {
+        return TAG;
+    }
 
     @Override
     public final void onCreate() {
@@ -38,17 +39,16 @@ public class AccelerometerService extends Service implements SensorEventListener
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
-        mSensorManager.registerListener(this,mAcceleromter,SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this,mAcceleromter,GlobalSettings.gAccelEventDelay);
     }
 
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-
-        Log.v(TAG, "onServiceDisconnected");
 
         mSensorManager.unregisterListener(this);
+
+        super.onDestroy();
     }
 
     @Override
@@ -59,15 +59,7 @@ public class AccelerometerService extends Service implements SensorEventListener
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-
-        long curTime = System.currentTimeMillis();
-        long diffTime = (curTime - mLastUpdate);
-
-        if (diffTime > GlobalSettings.gTouchEventWait) {
-            mLastUpdate = curTime;
-            Log.v(TAG, "" + mMotionSumm);
-            mMotionSumm = 0.0f;
-        }
+        checkActivity(GlobalSettings.gAccelEventWait, GlobalSettings.gAccelThreshold);
 
         float x = event.values[0];
         float y = event.values[1];
@@ -81,7 +73,7 @@ public class AccelerometerService extends Service implements SensorEventListener
         double movedY = Math.abs(yAbs - mLastY);
         double movedZ = Math.abs(zAbs - mLastZ);
 
-        mMotionSumm += movedX + movedY + movedZ;
+        mDetectedSensorSum += movedX + movedY + movedZ;
 
         mLastX = xAbs;
         mLastY = yAbs;

@@ -57,9 +57,10 @@ public abstract class SensorDetectorServiceBase extends DetectorServiceBase {
                 stopSelf();
             }
 
+            Log.v(getTag(), "" + mDetectedSensorSum);
+
             mDetectedSensorSum = 0.0f;
             mLastUpdate = curTime;
-            Log.v(getTag(), "" + mDetectedSensorSum);
         }
 
         return isActive;

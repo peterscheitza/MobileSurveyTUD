@@ -4,7 +4,6 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.database.ContentObserver;
 import android.os.Handler;
-import android.provider.Settings;
 import android.util.Log;
 
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
@@ -20,6 +19,8 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
 
     AudioManager mAudioManager;
     AudioObserver mAudioObserver;
+
+    Handler getFocusBackHandle;
 
     boolean mIsAudioFocus = false;
 
@@ -44,6 +45,9 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
 
     @Override
     public void onDestroy() {
+
+        if(getFocusBackHandle != null)
+            getFocusBackHandle.removeCallbacksAndMessages(null);
 
         getApplicationContext().getContentResolver().unregisterContentObserver(mAudioObserver);
 
@@ -79,28 +83,28 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
             if(previousStreamVolume - currentStreamVolume != 0) {
                 Log.v(TAG, "adjusted stream volume");
                 previousStreamVolume = currentStreamVolume;
-                onEvent();
+                onEvent(GlobalSettings.gSoundEventWait);
                 return;
             }
 
             if(previousNotificationVolume - currentNotificationVolume != 0) {
                 Log.v(TAG, "adjusted notification volume");
                 previousNotificationVolume = currentNotificationVolume;
-                onEvent();
+                onEvent(GlobalSettings.gSoundEventWait);
                 return;
             }
 
             if(previousRingVolume - currentRingVolume != 0) {
                 Log.v(TAG, "adjusted ring volume");
                 previousRingVolume = currentRingVolume;
-                onEvent();
+                onEvent(GlobalSettings.gSoundEventWait);
                 return;
             }
 
             if(previousSystemVolume - currentSystemVolume != 0) {
                 Log.v(TAG, "adjusted system volume");
                 previousSystemVolume = currentSystemVolume;
-                onEvent();
+                onEvent(GlobalSettings.gSoundEventWait);
                 return;
             }
 
@@ -114,7 +118,7 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
         if(focusChange == AudioManager.AUDIOFOCUS_LOSS){
                 //|| focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
                 //|| focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {  //triggered by notification, results in loop
-            onEvent();
+            onEvent(GlobalSettings.gSoundEventWait);
             runGetFocusHandler();
         }
 
@@ -122,14 +126,14 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
     }
 
     private void runGetFocusHandler() {
-        final Handler getFocusBackHandle = new Handler();
+        getFocusBackHandle = new Handler();
         Runnable runner = new Runnable(){
             public void run() {
                 if(mAudioManager.isMusicActive()) {
                     Log.v(TAG,"music still running, try to get focus later");
-                    onEvent();
+                    onEvent(GlobalSettings.gSoundEventWait);
                     mIsAudioFocus = false;
-                    getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequest);
+                    getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequestWait);
                 }
                 else {
                     if(!mIsAudioFocus) {
@@ -144,13 +148,13 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
                             mIsAudioFocus = true;
                         } else {
                             Log.v(TAG, "unable to get  focus");
-                            getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequest);
+                            getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequestWait);
                         }
                     }
                 }
 
             }
         };
-        getFocusBackHandle.postDelayed(runner, GlobalSettings.gSoundRequest);
+        getFocusBackHandle.postDelayed(runner, GlobalSettings.gSoundRequestWait);
     }
 }

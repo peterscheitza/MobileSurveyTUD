@@ -43,6 +43,7 @@ public abstract class DetectorServiceBase extends Service {
     @Override
     public void onDestroy() {
         Log.v(getTag(), "onServiceDisconnected");
+
         super.onDestroy();
     }
 

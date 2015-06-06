@@ -84,7 +84,7 @@ public class TouchDetectionService extends EventDetectorServiceBase implements O
 
         Log.i(TAG, "Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
 
-        onEvent();
+        onEvent(GlobalSettings.gTouchEventWait);
 
         togglePixelColor();
 

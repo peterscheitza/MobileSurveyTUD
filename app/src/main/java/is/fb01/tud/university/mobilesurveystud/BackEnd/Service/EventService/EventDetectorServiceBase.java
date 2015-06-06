@@ -39,17 +39,20 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
     public void onDestroy() {
         mEventHandler.removeCallbacksAndMessages(null);
 
+        isActive = false;
+        sendBroadcast(getTag());
+
         super.onDestroy();
     }
 
-    protected void onEvent() {
+    protected void onEvent(long idleTime) {
         if (isActive) {
             mEventHandler.removeCallbacksAndMessages(null);
-            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
+            mEventHandler.postDelayed(mEventRunnable, idleTime);
             mMillsEnd = System.currentTimeMillis();
         } else {
             Log.v(getTag(), "starting to detect some events");
-            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gTouchEventWait);
+            mEventHandler.postDelayed(mEventRunnable, idleTime);
             mMillsStart = System.currentTimeMillis();
             mMillsEnd = System.currentTimeMillis();
             isActive = true;

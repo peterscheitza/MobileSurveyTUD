@@ -36,7 +36,7 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
-        mSensorManager.registerListener(this, mGyroscope,SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mGyroscope, GlobalSettings.gGyroEventDelay );
 
         mLastUpdate = System.currentTimeMillis();
     }

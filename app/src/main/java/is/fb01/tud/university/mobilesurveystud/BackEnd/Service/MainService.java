@@ -57,7 +57,7 @@ public class MainService extends Service {
 
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
-    private boolean isScreenOn = true;
+    private boolean mIsScreenOn = true;
     //private boolean mIsHighMovement = false;
 
     /*private Intent mTouchDetectionService;
@@ -125,7 +125,7 @@ public class MainService extends Service {
                     Log.v(TAG, "something went wrong. service not found"); assert false;
 
                 if(mIsUseAdditional) {
-                    if (isStandardInactivity())
+                    if (isStandardInactivity() && mIsScreenOn)
                         startAdditionalServices();
                     else
                         stopAdditionalServices();
@@ -230,7 +230,7 @@ public class MainService extends Service {
         mStandardServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService));
 
         mAdditionalServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService));
-        //mAdditionalServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService));
+        mAdditionalServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService));
 
         for ( ServiceStruct serviceStruct : mStandardServiceMap.values()) {
             startService(serviceStruct.intent);
@@ -304,14 +304,14 @@ public class MainService extends Service {
         Log.v(TAG,"screen turned off/on");
 
         if(intent.getAction() == Intent.ACTION_SCREEN_OFF) {
-            isScreenOn = false;
+            mIsScreenOn = false;
             stopStandardServices();
             stopAdditionalServices();
             //stopService(mTouchDetectionService);
             //stopService(mGyroService);
         }
         else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
-            isScreenOn = true;
+            mIsScreenOn = true;
             resetParameter();
             startStandardServices();
             //startService(mTouchDetectionService);
@@ -392,7 +392,7 @@ public class MainService extends Service {
             if (activityDuration > GlobalSettings.gMinUseDuration) {
                 showToast("MS: Please answer survey, bitch!");
 
-                if (isScreenOn)
+                if (mIsScreenOn)
                     showSystemAlert();
                 else
                     showActivity();
@@ -404,26 +404,6 @@ public class MainService extends Service {
         }
         return false;
     }
-
-    /*private boolean isShowADialog() {
-        long activityDuration = mMillsEnd - mMillsStart;
-
-        Log.v(TAG, "activityDuration: " + activityDuration);
-
-        if (activityDuration > GlobalSettings.gMinUseDuration && !mIsHighMovement) {
-            showToast("MS: Please answer survey, bitch!");
-
-            resetParameter();
-
-            if(isScreenOn)
-                showSystemAlert();
-            else
-                showActivity();
-
-            return true;
-        }
-        return false;
-    }*/
 
     private void resetParameter(){
         mMillsStart = -1;
