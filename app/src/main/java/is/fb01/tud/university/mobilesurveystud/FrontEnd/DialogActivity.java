@@ -1,4 +1,4 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
 import android.app.Activity;
 import android.app.Notification;
@@ -20,6 +20,9 @@ import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.TextView;
 import android.util.Log;
+
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
+import is.fb01.tud.university.mobilesurveystud.R;
 
 
 public class DialogActivity extends ActionBarActivity {

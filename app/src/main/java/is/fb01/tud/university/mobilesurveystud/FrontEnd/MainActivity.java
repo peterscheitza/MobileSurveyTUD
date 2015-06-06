@@ -1,22 +1,22 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
 import android.app.ActivityManager;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.provider.Settings;
-import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.Toast;
+
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
+import is.fb01.tud.university.mobilesurveystud.R;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.GyroscopeService;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -94,15 +94,15 @@ public class MainActivity extends ActionBarActivity {
             ((Button)v).setText("Start Service");
             Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_active), GlobalSettings.ServiceStates.OFF.toString());
-            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.OFF.toString());
+            editor.putString(getString(R.string.is_active), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.is_gyro), MainService.State.OFF.toString());
         }
         else{
             startService(mMainService);
             ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_active), GlobalSettings.ServiceStates.ON.toString());
+            editor.putString(getString(R.string.is_active), MainService.State.ON.toString());
         }
 
         editor.commit();
@@ -111,7 +111,7 @@ public class MainActivity extends ActionBarActivity {
         SharedPreferences sharedPref2 = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
         String optioneName = getString(R.string.is_active);
-        String lastSavedState = sharedPref2.getString(optioneName, GlobalSettings.ServiceStates.UNDEFINED.toString());
+        String lastSavedState = sharedPref2.getString(optioneName, MainService.State.UNDEFINED.toString());
 
         Log.v(TAG,lastSavedState);
     }
@@ -124,14 +124,14 @@ public class MainActivity extends ActionBarActivity {
             ((Button)v).setText("Start Gyro Service");
             Toast.makeText(this, "Stop Gyro Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.OFF.toString());
+            editor.putString(getString(R.string.is_gyro), MainService.State.OFF.toString());
         }
         else{
             startService(mMainService);
             ((Button)v).setText("Stop Gyro Service");
             Toast.makeText(this, "Start Gyro Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_gyro), GlobalSettings.ServiceStates.ON.toString());
+            editor.putString(getString(R.string.is_gyro), MainService.State.ON.toString());
         }
 
 

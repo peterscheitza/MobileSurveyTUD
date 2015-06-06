@@ -1,4 +1,4 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.BackEnd.Receiver;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
+
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
+import is.fb01.tud.university.mobilesurveystud.R;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 
 /**
  * Created by peter_000 on 25.05.2015.
@@ -29,17 +33,17 @@ public class BootCompletedReceiver extends BroadcastReceiver{
         Log.v(TAG, sharedPrefName);
 
         String optioneName = r.getString(R.string.is_active);
-        String lastSavedState = sharedPref.getString(optioneName, GlobalSettings.ServiceStates.UNDEFINED.toString());
+        String lastSavedState = sharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());
         Log.v(TAG,optioneName);
         Log.v(TAG,lastSavedState);
 
 
-        if(lastSavedState.equals(GlobalSettings.ServiceStates.ON.toString())) {
+        if(lastSavedState.equals(MainService.State.ON.toString())) {
             Log.v(TAG, "restart service");
             Intent iMainService = new Intent(context, MainService.class);
             context.startService(iMainService);
         }
-        else if(lastSavedState.equals(GlobalSettings.ServiceStates.OFF.toString())) {
+        else if(lastSavedState.equals(MainService.State.OFF.toString())) {
             //do nothing
             Log.v(TAG, "service was off, we keep it off");
         }

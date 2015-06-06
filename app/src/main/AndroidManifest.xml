@@ -17,7 +17,7 @@
 
 
         <activity
-            android:name=".MainActivity"
+            android:name=".FrontEnd.MainActivity"
             android:label="@string/app_name"
             android:noHistory="true" >
             <intent-filter>
@@ -28,28 +28,34 @@
         </activity>
 
         <activity
-            android:name=".DialogActivity"
+            android:name=".FrontEnd.DialogActivity"
             android:label="@string/title_activity_dialog"
             android:showOnLockScreen="true"
             android:noHistory="true">
         </activity>
 
-        <receiver android:name=".BootCompletedReceiver">
+        <receiver android:name=".BackEnd.Receiver.BootCompletedReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".MainService" >
+        <service android:name=".BackEnd.Service.MainService" >
         </service>
 
-        <service android:name=".TouchDetectionService" >
+        <service android:name=".BackEnd.Service.EventService.TouchDetectionService" >
         </service>
 
-        <service android:name=".AccelerometerService" >
+        <service android:name=".BackEnd.Service.EventService.ButtonDetectionService" >
         </service>
 
-        <service android:name=".GyroscopeService" >
+        <service android:name=".BackEnd.Service.EventService.SoundDetectionService" >
+        </service>
+
+        <service android:name=".BackEnd.Service.SensorService.AccelerometerService" >
+        </service>
+
+        <service android:name=".BackEnd.Service.SensorService.GyroscopeService" >
         </service>
 
     </application>

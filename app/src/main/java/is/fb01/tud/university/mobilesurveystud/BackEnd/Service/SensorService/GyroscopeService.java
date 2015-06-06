@@ -1,60 +1,52 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService;
 
-import android.app.Service;
-        import android.content.Intent;
+import android.content.Intent;
         import android.hardware.Sensor;
         import android.hardware.SensorEvent;
         import android.hardware.SensorEventListener;
-        import android.hardware.SensorEventListener2;
-        import android.hardware.SensorManager;
+import android.hardware.SensorManager;
         import android.os.IBinder;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
-        import android.widget.Toast;
+
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * Created by peter_000 on 25.05.2015.
  */
-public class GyroscopeService extends Service implements SensorEventListener{
+public class GyroscopeService extends SensorDetectorServiceBase implements SensorEventListener{
 
     static final public String TAG = "GyroService";
-    static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
-
-    LocalBroadcastManager mBroadcaster;
 
     private SensorManager mSensorManager;
-    private Sensor mAcceleromter;
+    private Sensor mGyroscope;
 
-    private long mLastUpdate;
     private static final float NS2S = 1.0f / 1000000000.0f;
     private final float[] deltaRotationVector = new float[4];
     private float timestamp;
 
-    private double mMotionSumm = 0.00f;
-    private boolean isMoving = false;
+    @Override
+    public String getTag() {
+        return TAG;
+    }
 
     @Override
     public final void onCreate() {
         super.onCreate();
 
-        Log.v(TAG, "onServiceConnected");
-
-        mBroadcaster  = LocalBroadcastManager.getInstance(this);
-
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
-        mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
+        mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
-        mSensorManager.registerListener(this,mAcceleromter,SensorManager.SENSOR_DELAY_GAME);
+        mSensorManager.registerListener(this, mGyroscope,SensorManager.SENSOR_DELAY_GAME);
+
+        mLastUpdate = System.currentTimeMillis();
     }
 
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
-
-        Log.v(TAG, "onServiceDisconnected");
-
         mSensorManager.unregisterListener(this);
+
+        super.onDestroy();
     }
 
     @Override
@@ -65,7 +57,7 @@ public class GyroscopeService extends Service implements SensorEventListener{
     @Override
     public void onSensorChanged(SensorEvent event) {
 
-        checkActivity();
+        checkActivity(GlobalSettings.gGyroEventWait, GlobalSettings.gGyroThreshold);
 
         // This timestep's delta rotation to be multiplied by the current rotation
         // after computing it from the gyro sample data.
@@ -113,7 +105,7 @@ public class GyroscopeService extends Service implements SensorEventListener{
         double normDeltaY = Math.abs(deltaY * 2);
         double normDeltaZ = Math.abs(deltaZ);
 
-        mMotionSumm += normDeltaX + normDeltaY + normDeltaZ;// - (Math.PI * 3);
+        mDetectedSensorSum += normDeltaX + normDeltaY + normDeltaZ;// - (Math.PI * 3);
     }
 
     @Override
@@ -121,20 +113,8 @@ public class GyroscopeService extends Service implements SensorEventListener{
 
     }
 
-    private void checkActivity(){
-        long curTime = System.currentTimeMillis();
-        long diffTime = (curTime - mLastUpdate);
 
-        if (diffTime > GlobalSettings.gGyroEventWait) {
-            checkForBroadcast();
-
-            mLastUpdate = curTime;
-            Log.v(TAG, "" + mMotionSumm);
-            mMotionSumm = 0.0f;
-        }
-    }
-
-    private void checkForBroadcast(){
+    /*private void checkForBroadcast(){
         if(mMotionSumm > GlobalSettings.gGyroThreshold){
             isMoving = true;
             sendBroadcast(isMoving);
@@ -145,16 +125,8 @@ public class GyroscopeService extends Service implements SensorEventListener{
         //else do nothing here
 
         Log.v(TAG, "isMoving: " + isMoving);
-    }
+    }*/
 
-    private void sendBroadcast(boolean movement){
-        Log.v(TAG, "Broadcasting handler message");
-
-        Intent intent = new Intent("high device movement");
-        intent.setAction(MSG);
-        intent.putExtra("movementDetected", movement);
-        mBroadcaster.sendBroadcast(intent);
-    }
 
     private float[] absMatrixDiff(float[] m1, float[]m2){
         int matrixSize = m1.length;

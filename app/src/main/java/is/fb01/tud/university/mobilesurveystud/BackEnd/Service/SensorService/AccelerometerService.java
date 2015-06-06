@@ -1,23 +1,22 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService;
 
 import android.app.Service;
 import android.content.Intent;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorEventListener2;
 import android.hardware.SensorManager;
 import android.os.IBinder;
 import android.util.Log;
-import android.widget.Toast;
+
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * Created by peter_000 on 25.05.2015.
  */
-public class AccelerometerService extends Service implements SensorEventListener{
+public class AccelerometerService extends Service implements SensorEventListener {
 
     static final public String TAG = "AccelService";
-    static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
 
     private SensorManager mSensorManager;
     private Sensor mAcceleromter;
