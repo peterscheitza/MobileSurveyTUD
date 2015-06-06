@@ -397,6 +397,7 @@ public class MainService extends Service {
                 else
                     showActivity();
 
+                resetParameter();
                 return true;
             }
 

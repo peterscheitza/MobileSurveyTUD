@@ -34,8 +34,6 @@ public class AccelerometerService extends SensorDetectorServiceBase implements S
     public final void onCreate() {
         super.onCreate();
 
-        Log.v(TAG, "onServiceConnected");
-
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
