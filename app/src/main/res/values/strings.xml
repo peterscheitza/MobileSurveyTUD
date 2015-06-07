@@ -5,10 +5,13 @@
     <string name="action_settings">Settings</string>
     <string name="title_activity_dialog">DialogActivity</string>
 
+    <string name="exceptionalApps">exceptionalApps</string>
+
     <string name="is_active">isActive</string>
     <string name="millsStart">millsStart</string>
     <string name="millsEnd">millsEnd</string>
     <string name="sender">sender</string>
+    <string name="serviceStopSelf">serviceStopSelf</string>
     <string name="serviceType">serviceType</string>
 
 

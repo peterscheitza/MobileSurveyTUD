@@ -16,9 +16,11 @@ public abstract class DetectorServiceBase extends Service {
     public static final String Package = "is.fb01.tud.university.mobilesurveystud";
     public static final String MSG = Package + ".MSG";
 
-    protected long mMillsStart;
-    protected long mMillsEnd;
-    protected boolean isActive;
+    protected boolean mServiceStopSelf = true;
+
+    protected long mMillsStart = -1;
+    protected long mMillsEnd = -1;
+    protected boolean isActive = false;
 
     private LocalBroadcastManager mBroadcaster;
 
@@ -37,6 +39,7 @@ public abstract class DetectorServiceBase extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        mServiceStopSelf = intent.getBooleanExtra(getString(R.string.serviceStopSelf), true);
         return START_STICKY;
     }
 

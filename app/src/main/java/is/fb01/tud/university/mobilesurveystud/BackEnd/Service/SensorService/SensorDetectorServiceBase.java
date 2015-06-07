@@ -24,7 +24,6 @@ public abstract class SensorDetectorServiceBase extends DetectorServiceBase {
     public void onCreate() {
         super.onCreate();
 
-        isActive = false; //we assume no activity
         mLastUpdate = System.currentTimeMillis();
     }
 
@@ -50,11 +49,13 @@ public abstract class SensorDetectorServiceBase extends DetectorServiceBase {
             else if (mDetectedSensorSum < iThreshold && isActive) {
                 isActive = false;
                 sendBroadcast(getTag());
-                resetParamter();
             }
             else if (mDetectedSensorSum < iThreshold && !isActive) {
                 sendBroadcast(getTag());
-                stopSelf();
+                if(mServiceStopSelf)
+                    stopSelf();
+                else
+                    resetParamter();
             }
 
             Log.v(getTag(), "" + mDetectedSensorSum);

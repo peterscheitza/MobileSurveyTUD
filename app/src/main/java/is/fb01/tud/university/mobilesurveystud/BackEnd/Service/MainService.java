@@ -1,10 +1,12 @@
 package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 
+import android.app.ActivityManager;
 import android.app.Dialog;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -22,6 +24,11 @@ import android.widget.Toast;
 import android.net.Uri;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.Vector;
 
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.ButtonDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.SoundDetectionService;
@@ -132,23 +139,6 @@ public class MainService extends Service {
                 }
 
                 isShowADialog();
-
-
-
-
-
-
-
-
-
-
-                /*switch (sender) {
-                    case TouchDetectionService.TAG:
-                        handleTouchReceive(isActive); break;
-                    case GyroscopeService.TAG:
-                        handleGyroReceive(isActive); break;
-                    default: Log.v(TAG, "wrong receive"); assert false;
-                }*/
             }
         };
         IntentFilter localFilter = new IntentFilter(DetectorServiceBase.MSG);
@@ -219,16 +209,18 @@ public class MainService extends Service {
     private void initServiceMaps(){
 
         Intent touchDetectionService = new Intent(this, TouchDetectionService.class);
-        Intent buttonDetectionService = new Intent(this, ButtonDetectionService.class);
-        Intent soundDetectionService = new Intent(this, SoundDetectionService.class);
+        touchDetectionService.putExtra(getString(R.string.serviceStopSelf), false);
+        //Intent buttonDetectionService = new Intent(this, ButtonDetectionService.class);
 
+        Intent soundDetectionService = new Intent(this, SoundDetectionService.class);
         Intent gyroService = new Intent(this, GyroscopeService.class);
         Intent acceleromterService = new Intent(this, AccelerometerService.class);
 
         mStandardServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService));
         //mStandardServiceMap.put(ButtonDetectionService.TAG, new ServiceStruct(buttonDetectionService));
-        mStandardServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService));
+        //mStandardServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService));
 
+        mAdditionalServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService));
         mAdditionalServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService));
         mAdditionalServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService));
 
@@ -250,7 +242,6 @@ public class MainService extends Service {
                 serviceStruct.isActive = true;
             }
         }
-
     }
 
     private void stopAdditionalServices(){
@@ -392,10 +383,15 @@ public class MainService extends Service {
             if (activityDuration > GlobalSettings.gMinUseDuration) {
                 showToast("MS: Please answer survey, bitch!");
 
-                if (mIsScreenOn)
-                    showSystemAlert();
-                else
+                if (mIsScreenOn) {
+                    if(!areAppsExceptional(getForegroundApps()))
+                        showSystemAlert();
+                    else
+                        Log.v(TAG, "app is exceptional!");
+                }
+                else {
                     showActivity();
+                }
 
                 resetParameter();
                 return true;
@@ -504,4 +500,46 @@ public class MainService extends Service {
         });
         Log.v(TAG,sOutput);
     }
+
+    private boolean areAppsExceptional( Vector<String> appeNameVec){
+        DatabaseConnector connector = new DatabaseConnector(this);
+
+        Vector<String> exceptionalAppsVec = connector.readAllEntrys();
+
+        for(String currentExcept : exceptionalAppsVec){
+            for(String currentCheck : appeNameVec) {
+                if (currentCheck.equals(currentExcept)) {
+                    Log.v(TAG, "is exceptional app: " + currentExcept);
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private void addAppToExceptionList(String sAppName) {
+        DatabaseConnector connector = new DatabaseConnector(this);
+
+        connector.insert(sAppName);
+    }
+
+    private Vector<String> getForegroundApps() {
+
+        Vector<String> toReturn = new Vector<>();
+
+        ActivityManager mActivityManager = (ActivityManager)this.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> lRunningProc = mActivityManager.getRunningAppProcesses();
+
+        if(lRunningProc == null)
+            return toReturn;
+
+
+        for(ActivityManager.RunningAppProcessInfo info : lRunningProc) {
+            if (info.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND )
+                toReturn.add(info.processName);
+        }
+        return toReturn;
+    }
+
 }

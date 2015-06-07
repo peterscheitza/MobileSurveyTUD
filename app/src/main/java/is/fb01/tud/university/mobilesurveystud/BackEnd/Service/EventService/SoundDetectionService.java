@@ -22,7 +22,7 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
 
     Handler getFocusBackHandle;
 
-    boolean mIsAudioFocus = false;
+    //boolean mIsAudioFocus = false;
 
 
     @Override
@@ -38,6 +38,13 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
         mAudioManager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
 
         runGetFocusHandler();
+
+  /*      if(mAudioManager.isMusicActive())
+            runGetFocusHandler();
+        else if (mServiceStopSelf) {
+            isActive = false;
+            sendBroadcast(getTag());
+        }*/
 
         mAudioObserver = new AudioObserver(mAudioManager, new Handler());
         getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mAudioObserver );
@@ -132,11 +139,11 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
                 if(mAudioManager.isMusicActive()) {
                     Log.v(TAG,"music still running, try to get focus later");
                     onEvent(GlobalSettings.gSoundEventWait);
-                    mIsAudioFocus = false;
+                    isActive = true;
                     getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequestWait);
                 }
                 else {
-                    if(!mIsAudioFocus) {
+                    if(isActive) {
                         int result = mAudioManager.requestAudioFocus((AudioManager.OnAudioFocusChangeListener) context,
                                 // Use the music stream.
                                 AudioManager.STREAM_MUSIC,
@@ -145,7 +152,7 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
 
                         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                             Log.v(TAG, "got audio focus again");
-                            mIsAudioFocus = true;
+                            isActive = false;
                         } else {
                             Log.v(TAG, "unable to get  focus");
                             getFocusBackHandle.postDelayed(this, GlobalSettings.gSoundRequestWait);
