@@ -10,6 +10,8 @@ public class GlobalSettings {
     final public static int gEventWait   = 30000; // 30 Seconds
     final public static int gMinUseDuration    = 30000; // 2min
 
+    final public static int gResetShowCounter = 24*60*60*1000; //time in mills
+    final public static int gMaxShowCounter = 24*60*60*1000;
 
     final public static String gDialogHead = "Dialog head: Hello asshole";
     final public static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey you useless bitch";

@@ -9,13 +9,13 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
  */
 public class ServiceStruct {
 
-    ServiceStruct(Intent i){
+    ServiceStruct(Intent i, MainService.ServiceType eType){
         intent = i;
-        tag = i.getComponent().getShortClassName();
+        type = eType;
     }
 
-    public String tag;
     public Intent intent;
+    public MainService.ServiceType type;
     public MainService.State state = MainService.State.UNDEFINED;
     public boolean isActive = false;
 }

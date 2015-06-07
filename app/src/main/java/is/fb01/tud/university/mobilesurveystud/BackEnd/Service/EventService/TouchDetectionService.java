@@ -59,6 +59,7 @@ public class TouchDetectionService extends EventDetectorServiceBase implements O
         mWindowManager.addView(mTouchLayout, mParams);
 
         Log.i(TAG, "added View");
+
     }
 
 

@@ -29,19 +29,15 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
         mEventRunnable = new Runnable(){
             public void run() {
                 isActive = false;
-                if(mServiceStopSelf)
-                    stopSelf();
-                else {
-                    sendBroadcast(getTag());
-                    resetParamter();
-                }
 
+                sendBroadcast(getTag());
                 resetParamter();
+
+
             }
         };
 
-        if(mServiceStopSelf)
-            mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gEventWait);
+        mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gEventWait);
     }
 
     @Override

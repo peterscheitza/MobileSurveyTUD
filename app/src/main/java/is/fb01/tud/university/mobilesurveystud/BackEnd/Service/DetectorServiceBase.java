@@ -39,7 +39,6 @@ public abstract class DetectorServiceBase extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        mServiceStopSelf = intent.getBooleanExtra(getString(R.string.serviceStopSelf), true);
         return START_STICKY;
     }
 

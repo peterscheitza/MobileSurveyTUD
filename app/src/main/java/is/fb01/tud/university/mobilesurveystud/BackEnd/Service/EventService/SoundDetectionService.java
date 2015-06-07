@@ -39,13 +39,6 @@ public class SoundDetectionService extends EventDetectorServiceBase implements A
 
         runGetFocusHandler();
 
-  /*      if(mAudioManager.isMusicActive())
-            runGetFocusHandler();
-        else if (mServiceStopSelf) {
-            isActive = false;
-            sendBroadcast(getTag());
-        }*/
-
         mAudioObserver = new AudioObserver(mAudioManager, new Handler());
         getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mAudioObserver );
     }

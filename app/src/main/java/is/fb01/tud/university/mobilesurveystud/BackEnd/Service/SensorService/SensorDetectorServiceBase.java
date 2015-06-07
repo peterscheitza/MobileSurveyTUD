@@ -52,10 +52,8 @@ public abstract class SensorDetectorServiceBase extends DetectorServiceBase {
             }
             else if (mDetectedSensorSum < iThreshold && !isActive) {
                 sendBroadcast(getTag());
-                if(mServiceStopSelf)
-                    stopSelf();
-                else
-                    resetParamter();
+                stopSelf();
+
             }
 
             Log.v(getTag(), "" + mDetectedSensorSum);
