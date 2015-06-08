@@ -11,6 +11,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.PowerManager;
@@ -57,40 +58,23 @@ public class MainService extends Service {
     }
 
     private BroadcastReceiver mLocalBroadcasteReceiver;
+
     private BroadcastReceiver mPowerButtonReceiver;
     private BroadcastReceiver mDialogReceiver;
     private BroadcastReceiver waitForUnlockReceiver;
 
+
     private Handler mToastHandler;
 
-    private PowerManager.WakeLock mWakeLock;
 
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
     private boolean mIsScreenOn = true;
-    //private boolean mIsHighMovement = false;
-
-    /*private Intent mTouchDetectionService;
-    private Intent mAcceleromterService;
-    private Intent mGyroService;*/
-
-    State gyroState =State.UNDEFINED;
-
-
-    //private Intent mButtonDetectionService;
-
-    /*private class ServiceStruct{
-        public String TAG;
-        public GlobalSettings.ServiceStates state = GlobalSettings.ServiceStates.UNDEFINED;
-        public boolean isActive = false;
-    }*/
-
-    //HashMap<String,ServiceStruct> mStandardServiceMap = new HashMap<>();
-    //HashMap<String,ServiceStruct> mAdditionalServiceMap = new HashMap<>();
 
     HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
     boolean mIsUseAdditional = true;
+
 
     @Override
     public void onCreate() {
@@ -102,7 +86,7 @@ public class MainService extends Service {
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         String optioneName = getString(R.string.is_gyro);
         String sGyroState = sharedPref.getString(optioneName, State.UNDEFINED.toString());
-        gyroState = State.valueOf(sGyroState);
+
 
 
         initServiceMaps();
@@ -245,7 +229,7 @@ public class MainService extends Service {
             if (serviceStruct.state == State.OFF && serviceStruct.type == ServiceType.ADDITIONAL) {
                 startService(serviceStruct.intent);
                 serviceStruct.state = State.ON;
-                serviceStruct.isActive = true;
+                serviceStruct.isActive = true; //assume activity first
             }
         }
     }
@@ -265,6 +249,7 @@ public class MainService extends Service {
             if(serviceStruct.state == State.OFF && serviceStruct.type == ServiceType.STANDARD) {
                 startService(serviceStruct.intent);
                 serviceStruct.state = State.ON;
+                serviceStruct.isActive = false;
             }
         }
     }
@@ -286,15 +271,11 @@ public class MainService extends Service {
             mIsScreenOn = false;
             stopStandardServices();
             stopAdditionalServices();
-            //stopService(mTouchDetectionService);
-            //stopService(mGyroService);
         }
         else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
             mIsScreenOn = true;
-            resetParameter();
+            //resetParameter();
             startStandardServices();
-            //startService(mTouchDetectionService);
-            //startService(mGyroService);
         }
     }
 
@@ -319,10 +300,13 @@ public class MainService extends Service {
     }
 
     private boolean isInactivity(){
-        if(isStandardInactivity() && isAdditionalInactivity())
-            return true;
-        else
-            return false;
+        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
+            if(serviceStruct.state == State.ON) {
+                if(serviceStruct.isActive)
+                    return false;
+            }
+        }
+        return true;
     }
 
     private boolean isStandardInactivity(){
@@ -381,19 +365,6 @@ public class MainService extends Service {
     private void resetParameter(){
         mMillsStart = -1;
         mMillsEnd = -1;
-        //mIsHighMovement = false;
-    }
-
-    public void wakeDevice() {
-
-        PowerManager powerManager = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        mWakeLock = powerManager.newWakeLock(
-                PowerManager.ACQUIRE_CAUSES_WAKEUP
-                        | PowerManager.PARTIAL_WAKE_LOCK,
-                "UselessWakeTag");
-        mWakeLock.acquire();
-
-        Log.v(TAG, "WAKEUP");
     }
 
     private void showNotification(){
@@ -503,6 +474,8 @@ public class MainService extends Service {
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         int lCounter = sharedPref.getInt(getString(R.string.dialogShownCounter), 0);
 
+
+        Log.v(TAG, "" + lCounter + " <= " + GlobalSettings.gMaxShowCounter );
         if(lCounter <= GlobalSettings.gMaxShowCounter){
             SharedPreferences.Editor editor = sharedPref.edit();
             int newCounter = lCounter + 1;
@@ -555,4 +528,8 @@ public class MainService extends Service {
         return toReturn;
     }
 
+    private boolean isGPSEnabled(){
+        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+        return  (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER));
+    }
 }
