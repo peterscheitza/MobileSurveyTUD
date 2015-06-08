@@ -1,5 +1,6 @@
 package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 
+import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
@@ -32,6 +33,9 @@ public abstract class DetectorServiceBase extends Service {
         super.onCreate();
 
         Log.v(getTag(), "onServiceConnected");
+
+        Notification notification  = new Notification.Builder(this).build();
+        startForeground(1,notification);
 
         resetParamter();
         mBroadcaster = LocalBroadcastManager.getInstance(this);

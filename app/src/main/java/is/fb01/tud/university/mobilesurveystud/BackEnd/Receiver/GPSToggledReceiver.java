@@ -13,6 +13,12 @@ import is.fb01.tud.university.mobilesurveystud.R;
 
 /**
  * Created by peter_000 on 08.06.2015.
+ *
+ * DEPRECATED
+ * schlägt bei jeder Positionsbestimmung zu und schaltet Main ab (BSP positionsbestimmung im browser)
+ * ist auch einfach mal abgestürzt
+ *
+ * Umwandlung zum service (additional)
  */
 public class GPSToggledReceiver extends BroadcastReceiver implements GpsStatus.Listener {
 
@@ -49,7 +55,7 @@ public class GPSToggledReceiver extends BroadcastReceiver implements GpsStatus.L
             mMainService = new Intent(mContext, MainService.class);
 
             String shardPrefName = mContext.getString(R.string.shared_Pref);
-            String optioneName = mContext.getString(R.string.is_active);
+            String optioneName = mContext.getString(R.string.setting_is_active);
 
             SharedPreferences sharedPref = mContext.getSharedPreferences(shardPrefName, Context.MODE_PRIVATE);
             String sMainServiceState = sharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());

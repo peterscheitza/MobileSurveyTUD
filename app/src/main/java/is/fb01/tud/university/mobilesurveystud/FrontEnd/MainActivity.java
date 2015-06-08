@@ -13,7 +13,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.GyroscopeService;
@@ -25,12 +24,16 @@ public class MainActivity extends ActionBarActivity {
 
     static final String TAG = "MainActivity";
 
+    SharedPreferences mSharedPref;
     Intent mMainService;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
         mMainService = new Intent(this, MainService.class);
     }
@@ -70,16 +73,26 @@ public class MainActivity extends ActionBarActivity {
 
         Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
         Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
+        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
 
         if(isServiceRunning(MainService.class))
             toggleMainButton.setText("Stop Service");
         else
             toggleMainButton.setText("Start Service");
 
-        if(isServiceRunning(GyroscopeService.class))
-            toggleGyroButton.setText("Stop Gyro Service");
+        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+        if(useGyro == MainService.State.ON)
+            toggleGyroButton.setText("Do not use gyro service");
         else
-            toggleGyroButton.setText("Start Gyro Service");
+            toggleGyroButton.setText("Use gyro service");
+
+
+        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
+        if(useAdditional == MainService.State.ON)
+            toggleAdditionalButton.setText("Do not use additional service");
+        else
+            toggleAdditionalButton.setText("Use additional services");
+
 
 
     }
@@ -94,50 +107,87 @@ public class MainActivity extends ActionBarActivity {
             ((Button)v).setText("Start Service");
             Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_active), MainService.State.OFF.toString());
-            editor.putString(getString(R.string.is_gyro), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_additional), MainService.State.OFF.toString());
         }
         else{
             startService(mMainService);
             ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.is_active), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
         }
 
         editor.commit();
-
-
-        SharedPreferences sharedPref2 = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-
-        String optioneName = getString(R.string.is_active);
-        String lastSavedState = sharedPref2.getString(optioneName, MainService.State.UNDEFINED.toString());
-
-        Log.v(TAG,lastSavedState);
     }
 
     public void buttonToggleGyro(View v){
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
+        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
 
-        if(isServiceRunning(GyroscopeService.class)){
-            ((Button)v).setText("Start Gyro Service");
-            Toast.makeText(this, "Stop Gyro Service", Toast.LENGTH_SHORT).show();
+        SharedPreferences.Editor editor = mSharedPref.edit();
 
-            editor.putString(getString(R.string.is_gyro), MainService.State.OFF.toString());
+        if(useGyro == MainService.State.OFF){
+            ((Button)v).setText("Do not use gyro service");
+            Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
         }
-        else{
+        else if (useGyro == MainService.State.ON) {
+            ((Button)v).setText("Use gyro service");
+            Toast.makeText(this, "Removed gyro service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
+        }
+        else {
+            ((Button)v).setText("Do not use gyro service");
+            Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
+
+            Log.v(TAG, "wrong service state");
+            assert false;
+        }
+
+        if(isServiceRunning(MainService.class)){
+            stopService(mMainService);
             startService(mMainService);
-            ((Button)v).setText("Stop Gyro Service");
-            Toast.makeText(this, "Start Gyro Service", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.is_gyro), MainService.State.ON.toString());
         }
 
+        editor.commit();
+    }
 
-        //restart to toggle Gyro
-        stopService(mMainService);
-        startService(mMainService);
+    public void buttonToggleAdditional(View v){
+        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+
+        if(useAdditional == MainService.State.OFF){
+            ((Button)v).setText("Do not use additional service");
+            Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
+        }
+        else if (useAdditional == MainService.State.ON) {
+            ((Button)v).setText("Use additional services");
+            Toast.makeText(this, "Removed additional services", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_additional), MainService.State.OFF.toString());
+        }
+        else {
+            ((Button)v).setText("Do not use additional service");
+            Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
+
+            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
+
+            Log.v(TAG, "wrong service state");
+            assert false;
+        }
+
+        if(isServiceRunning(MainService.class)){
+            stopService(mMainService);
+            startService(mMainService);
+        }
 
         editor.commit();
     }
@@ -151,5 +201,11 @@ public class MainActivity extends ActionBarActivity {
             }
         }
         return false;
+    }
+
+    private MainService.State readEnum(int iName){
+        String optioneName = getString(iName);
+        String sEnum = mSharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());
+        return MainService.State.valueOf(sEnum);
     }
 }

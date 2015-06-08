@@ -6,7 +6,6 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -14,7 +13,6 @@ import android.content.SharedPreferences;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
-import android.os.PowerManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
@@ -25,13 +23,10 @@ import android.widget.Toast;
 import android.net.Uri;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.Vector;
 
-import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.ButtonDetectionService;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.GPSDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.SoundDetectionService;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
@@ -73,7 +68,8 @@ public class MainService extends Service {
 
     HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
-    boolean mIsUseAdditional = true;
+    State mIsGyroState;
+    State mIsUseAdditional;
 
 
     @Override
@@ -83,10 +79,16 @@ public class MainService extends Service {
 
         mToastHandler = new Handler();
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        String optioneName = getString(R.string.is_gyro);
-        String sGyroState = sharedPref.getString(optioneName, State.UNDEFINED.toString());
 
+        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+
+        String optionGyro = getString(R.string.setting_is_gyro);
+        String sGyroState = sharedPref.getString(optionGyro, State.UNDEFINED.toString());
+        mIsGyroState = State.valueOf(sGyroState);
+
+        String optionAdditional = getString(R.string.setting_is_additional);
+        String sAddState = sharedPref.getString(optionAdditional, State.UNDEFINED.toString());
+        mIsUseAdditional = State.valueOf(sAddState);
 
 
         initServiceMaps();
@@ -125,7 +127,7 @@ public class MainService extends Service {
                     assert false;
                 }
 
-                if(mIsUseAdditional) {
+                if(mIsUseAdditional == State.ON) {
                     if (isStandardInactivity() && mIsScreenOn)
                         startAdditionalServices();
                     else
@@ -201,6 +203,7 @@ public class MainService extends Service {
         //Intent buttonDetectionService = new Intent(this, ButtonDetectionService.class);
 
         Intent soundDetectionService = new Intent(this, SoundDetectionService.class);
+        Intent gpsDetectionService = new Intent(this, GPSDetectionService.class);
         Intent gyroService = new Intent(this, GyroscopeService.class);
         Intent acceleromterService = new Intent(this, AccelerometerService.class);
 
@@ -209,6 +212,9 @@ public class MainService extends Service {
         mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceType.ADDITIONAL));
         mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceType.ADDITIONAL));
         mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceType.ADDITIONAL));
+
+        if(mIsGyroState == State.ON)
+            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceType.ADDITIONAL));
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             if(serviceStruct.type == ServiceType.STANDARD) {

@@ -7,7 +7,6 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
 
-import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 
@@ -32,7 +31,7 @@ public class BootCompletedReceiver extends BroadcastReceiver{
         SharedPreferences sharedPref = context.getSharedPreferences(sharedPrefName, Context.MODE_PRIVATE);
         Log.v(TAG, sharedPrefName);
 
-        String optioneName = r.getString(R.string.is_active);
+        String optioneName = r.getString(R.string.setting_is_active);
         String lastSavedState = sharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());
         Log.v(TAG,optioneName);
         Log.v(TAG,lastSavedState);

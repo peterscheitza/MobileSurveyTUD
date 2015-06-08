@@ -25,6 +25,8 @@ public class GlobalSettings {
     //Additional Settings:
     final public static int gTouchEventWait = gEventWait;
 
+    final public static int gGPSEventWait = gEventWait;
+
     final public static int gSoundEventWait = gEventWait;
     final public static int gSoundRequestWait = 10000; //needs to be smaller then gTouchEventWait
 
