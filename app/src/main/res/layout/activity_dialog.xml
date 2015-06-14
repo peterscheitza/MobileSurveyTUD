@@ -7,7 +7,7 @@
     tools:context="is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity">
 
     <ImageView
-        android:id="@+id/ActivityImage"
+        android:id="@+id/activityImage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:adjustViewBounds="true"
@@ -18,39 +18,39 @@
         android:contentDescription="@drawable/athena" />
 
     <TextView
-        android:id="@+id/ActivityText"
+        android:id="@+id/activityText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@+id/ActivityImage"/>
+        android:layout_toRightOf="@+id/activityImage"/>
 
     <Button
-        android:id="@+id/ActivityGoToButton"
+        android:id="@+id/activityGoToButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
         android:layout_marginRight="5dp"
-        android:layout_below="@+id/ActivityImage"
+        android:layout_below="@+id/activityImage"
         />
 
     <Button
-        android:id="@+id/ActivityExistButton"
+        android:id="@+id/activityExitButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp"
         android:layout_marginRight="5dp"
-        android:layout_below="@+id/ActivityImage"
-        android:layout_toRightOf="@+id/ActivityGoToButton"/>
+        android:layout_below="@+id/activityImage"
+        android:layout_toRightOf="@+id/activityGoToButton"/>
 
     <WebView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:id="@+id/ActivityWebView"
-        android:layout_below="@+id/ActivityGoToButton"
+        android:id="@+id/activityWebView"
+        android:layout_below="@+id/activityGoToButton"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_alignParentBottom="true"
-        android:layout_alignRight="@+id/ActivityText"
-        android:layout_alignEnd="@+id/ActivityText" />
+        android:layout_alignRight="@+id/activityText"
+        android:layout_alignEnd="@+id/activityText" />
     />
 
 </RelativeLayout>
