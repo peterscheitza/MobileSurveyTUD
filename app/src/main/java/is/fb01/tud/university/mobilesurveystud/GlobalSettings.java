@@ -11,7 +11,7 @@ public class GlobalSettings {
     final public static int gMinUseDuration    = 30000; // 2min
 
     final public static int gResetShowCounter = 24*60*60*1000; //time in mills
-    final public static int gMaxShowCounter = 5;
+    final public static int gMaxShowCounter = 9999999;
 
     final public static String gDialogHead = "Dialog head: Hello asshole";
     final public static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey you useless bitch";
@@ -27,8 +27,11 @@ public class GlobalSettings {
 
     final public static int gGPSEventWait = gEventWait;
 
-    final public static int gSoundEventWait = gEventWait;
-    final public static int gSoundRequestWait = 10000; //needs to be smaller then gTouchEventWait
+    final public static int gSoundEventWait = gEventWait; //could be smaller
+    final public static int gSoundRequestWait = 10000; //needs to be smaller then gSoundEventWait
+
+    final public static int gPhoneEventWait = gEventWait; //could be smaller
+    final public static int gPhoneRequestWait = 10000; //needs to be smaller then gTouchEventWait
 
     final public static int gGyroEventWait = gEventWait;
     final public static int gGyroEventDelay = 200000; // microseconds (!) -> 200 milliseconds
@@ -37,7 +40,7 @@ public class GlobalSettings {
 
     final public static int gAccelEventWait = gEventWait;
     final public static int gAccelEventDelay = 200000; // microseconds (!) -> 200 milliseconds
-    final public static int gAccelThreshold = 100; //need to be adjusted when gAccelEventWait or gAccelEventDelay changes
+    final public static int gAccelThreshold = 200; //need to be adjusted when gAccelEventWait or gAccelEventDelay changes
 
     final public static String[]gDefaultExceptionalApps = {
             "com.google.android.apps.maps"

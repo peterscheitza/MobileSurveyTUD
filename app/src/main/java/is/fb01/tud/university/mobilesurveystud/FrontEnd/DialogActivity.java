@@ -22,6 +22,7 @@ import android.widget.TextView;
 import android.util.Log;
 
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
+import is.fb01.tud.university.mobilesurveystud.Notifier;
 import is.fb01.tud.university.mobilesurveystud.R;
 
 
@@ -46,13 +47,13 @@ public class DialogActivity extends ActionBarActivity {
 
         setTitle(GlobalSettings.gDialogHead);
 
-        TextView dialogText = (TextView) findViewById(R.id.ActivityText);
+        TextView dialogText = (TextView) findViewById(R.id.activityText);
         dialogText.setText(GlobalSettings.gDialogBody);
 
-        Button activityGoToButton = (Button) findViewById(R.id.ActivityGoToButton);
+        Button activityGoToButton = (Button) findViewById(R.id.activityGoToButton);
         activityGoToButton.setText(GlobalSettings.gDialogGoToButton);
 
-        Button activityExistButton = (Button) findViewById(R.id.ActivityExistButton);
+        Button activityExistButton = (Button) findViewById(R.id.activityExitButton);
         activityExistButton.setText(GlobalSettings.gDialogExistButton);
 
         activityGoToButton.setOnClickListener(new View.OnClickListener() {
@@ -80,7 +81,7 @@ public class DialogActivity extends ActionBarActivity {
             }
         });
 
-        WebView activityWebView = (WebView) findViewById(R.id.ActivityWebView);
+        WebView activityWebView = (WebView) findViewById(R.id.activityWebView);
 
         if(isOnline()) {
             activityWebView.getSettings().setJavaScriptEnabled(true);
@@ -95,6 +96,8 @@ public class DialogActivity extends ActionBarActivity {
         else {
             activityWebView.setVisibility(View.GONE);
         }
+
+        new Notifier(this).alert();
     }
 
     @Override

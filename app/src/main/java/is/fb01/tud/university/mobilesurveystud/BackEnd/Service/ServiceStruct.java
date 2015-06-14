@@ -2,20 +2,31 @@ package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 
 import android.content.Intent;
 
-import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
-
 /**
  * Created by peter_000 on 04.06.2015.
  */
 public class ServiceStruct {
 
-    ServiceStruct(Intent i, MainService.ServiceType eType){
-        intent = i;
-        type = eType;
+    static public enum start {
+        SCREEN_ON, SCREEN_OFF, ADDITIONAL
     }
 
-    public Intent intent;
-    public MainService.ServiceType type;
+    static public enum stop {
+        NEVER, SCREEN_OFF, INACTIVITY
+    }
+
+    ServiceStruct(Intent intent, start start, stop stop){
+        mIntent = intent;
+        mStart = start;
+        mStop = stop;
+        //type = eType;
+    }
+
+    public Intent mIntent;
+    start mStart;
+    stop mStop;
+
+    //public MainService.ServiceType type;
     public MainService.State state = MainService.State.UNDEFINED;
     public boolean isActive = false;
 }

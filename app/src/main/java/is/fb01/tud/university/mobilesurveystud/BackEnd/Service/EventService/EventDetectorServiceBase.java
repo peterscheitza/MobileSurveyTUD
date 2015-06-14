@@ -32,8 +32,6 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
 
                 sendBroadcast(getTag());
                 resetParamter();
-
-
             }
         };
 

@@ -3,13 +3,13 @@ package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 import android.app.ActivityManager;
 import android.app.Dialog;
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.graphics.BitmapFactory;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,6 +17,7 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.webkit.WebView;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -26,10 +27,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
+import is.fb01.tud.university.mobilesurveystud.BackEnd.DatabaseConnector;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.GPSDetectionService;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.PhoneDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.SoundDetectionService;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
+import is.fb01.tud.university.mobilesurveystud.Notifier;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.TouchDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.AccelerometerService;
@@ -49,7 +53,7 @@ public class MainService extends Service {
     }
 
     static public enum ServiceType {
-        STANDARD,ADDITIONAL
+        STANDARD,ADDITIONAL,ADDITIONAL_extended
     }
 
     private BroadcastReceiver mLocalBroadcasteReceiver;
@@ -68,6 +72,8 @@ public class MainService extends Service {
 
     HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
+    boolean mIsAdditionalRunning = false;
+
     State mIsGyroState;
     State mIsUseAdditional;
 
@@ -76,6 +82,14 @@ public class MainService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.v(TAG,"onServiceConnected");
+
+        Notification notification  = new Notification.Builder(this)
+                .setContentTitle("MobileSurveysTUD")
+                .setSmallIcon(R.drawable.ms_tud)
+                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.athena))
+                .build();
+
+        startForeground(2,notification);
 
         mToastHandler = new Handler();
 
@@ -119,8 +133,10 @@ public class MainService extends Service {
                     ServiceStruct struct = mServiceMap.get(sender);
 
                     struct.isActive = isActive;
-                    if(struct.type == ServiceType.ADDITIONAL && !isActive)
-                        stopService(struct.intent);
+                    if(struct.mStop == ServiceStruct.stop.INACTIVITY && !isActive) {
+                        stopService(struct.mIntent);
+                        struct.state = State.OFF;
+                    }
                 }
                 else {
                     Log.v(TAG, "something went wrong. service not found");
@@ -128,10 +144,10 @@ public class MainService extends Service {
                 }
 
                 if(mIsUseAdditional == State.ON) {
-                    if (isStandardInactivity() && mIsScreenOn)
-                        startAdditionalServices();
-                    else
-                        stopAdditionalServices();
+                    if (!mIsAdditionalRunning && isStandardInactivity() && mIsScreenOn) {
+                        startServiceEvent(ServiceStruct.start.ADDITIONAL);
+                        mIsAdditionalRunning = true;
+                    }
                 }
 
 
@@ -184,8 +200,10 @@ public class MainService extends Service {
         unregisterReceiver(this.mPowerButtonReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
-        stopAdditionalServices();
-        stopStandardServices();
+        //stop all services
+        stopServiceEvent(ServiceStruct.stop.NEVER);
+        stopServiceEvent(ServiceStruct.stop.SCREEN_OFF);
+        stopServiceEvent(ServiceStruct.stop.INACTIVITY);
     }
 
     @Override
@@ -206,39 +224,65 @@ public class MainService extends Service {
         Intent gpsDetectionService = new Intent(this, GPSDetectionService.class);
         Intent gyroService = new Intent(this, GyroscopeService.class);
         Intent acceleromterService = new Intent(this, AccelerometerService.class);
+        Intent phoneService = new Intent(this, PhoneDetectionService.class);
 
-        mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceType.STANDARD));
+        mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceStruct.start.SCREEN_ON, ServiceStruct.stop.SCREEN_OFF));
 
-        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceType.ADDITIONAL));
-        mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceType.ADDITIONAL));
-        mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceType.ADDITIONAL));
+        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
+        mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
+        mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
+
+        mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, ServiceStruct.start.SCREEN_OFF, ServiceStruct.stop.INACTIVITY));
 
         if(mIsGyroState == State.ON)
-            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceType.ADDITIONAL));
+            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.type == ServiceType.STANDARD) {
-                startService(serviceStruct.intent);
-                serviceStruct.state = State.ON;
-            }
-            else if (serviceStruct.type == ServiceType.ADDITIONAL) {
-                serviceStruct.state = State.OFF;
+            serviceStruct.isActive = false;
+            serviceStruct.state = State.OFF;
+        }
 
+        startServiceEvent(ServiceStruct.start.SCREEN_ON);
+    }
+
+
+    private void stopServiceEvent(ServiceStruct.stop stop) {
+
+        Log.v(TAG,"stopServiceEvent: " + stop );
+
+        for (ServiceStruct serviceStruct : mServiceMap.values()) {
+            if (serviceStruct.state == State.ON && serviceStruct.mStop == stop) {
+                stopService(serviceStruct.mIntent);
+                serviceStruct.state = State.OFF;
+                serviceStruct.isActive = false;
             }
-            else
-                Log.v(TAG, "wrong service type"); assert false;
         }
     }
 
-    private void startAdditionalServices() {
+    private void startServiceEvent(ServiceStruct.start start) {
+
+        Log.v(TAG,"startServiceEvent: " + start );
+
         for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.OFF && serviceStruct.type == ServiceType.ADDITIONAL) {
+            if (serviceStruct.state == State.OFF && serviceStruct.mStart == start) {
+                startService(serviceStruct.mIntent);
+                serviceStruct.state = State.ON;
+                serviceStruct.isActive = true; //assume activity
+            }
+        }
+    }
+
+    /*private void startAdditionalServices() {
+        for (ServiceStruct serviceStruct : mServiceMap.values()) {
+            if (serviceStruct.state == State.OFF
+                    && (serviceStruct.type == ServiceType.ADDITIONAL || serviceStruct.type == ServiceType.ADDITIONAL_extended) ) {
                 startService(serviceStruct.intent);
                 serviceStruct.state = State.ON;
                 serviceStruct.isActive = true; //assume activity first
             }
         }
     }
+
 
     private void stopAdditionalServices(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
@@ -268,20 +312,18 @@ public class MainService extends Service {
                 serviceStruct.isActive = false;
             }
         }
-    }
+    }*/
 
     private void handlePowerButton(Intent intent){
         Log.v(TAG,"screen turned off/on");
 
         if(intent.getAction() == Intent.ACTION_SCREEN_OFF) {
             mIsScreenOn = false;
-            stopStandardServices();
-            stopAdditionalServices();
+            stopServiceEvent(ServiceStruct.stop.SCREEN_OFF);
         }
         else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
             mIsScreenOn = true;
-            //resetParameter();
-            startStandardServices();
+            startServiceEvent(ServiceStruct.start.SCREEN_ON);
         }
     }
 
@@ -317,7 +359,7 @@ public class MainService extends Service {
 
     private boolean isStandardInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.type == ServiceType.STANDARD) {
+            if(serviceStruct.state == State.ON && serviceStruct.mStart != ServiceStruct.start.ADDITIONAL) {
                 if(serviceStruct.isActive)
                     return false;
             }
@@ -325,7 +367,7 @@ public class MainService extends Service {
         return true;
     }
 
-    private boolean isAdditionalInactivity(){
+   /* private boolean isAdditionalInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             if(serviceStruct.state == State.ON && serviceStruct.type == ServiceType.ADDITIONAL) {
                 if(serviceStruct.isActive)
@@ -333,7 +375,7 @@ public class MainService extends Service {
             }
         }
         return true;
-    }
+    }*/
 
     private boolean isShowADialog() {
         long activityDuration = mMillsEnd - mMillsStart;
@@ -371,18 +413,7 @@ public class MainService extends Service {
     private void resetParameter(){
         mMillsStart = -1;
         mMillsEnd = -1;
-    }
-
-    private void showNotification(){
-        Log.v(TAG, "notification");
-
-        Notification notification  = new Notification.Builder(this).build();
-        notification.defaults =  Notification.DEFAULT_ALL;
-
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-
-        notificationManager.notify(0, notification);
+        mIsAdditionalRunning = false;
     }
 
     private void showActivity() {
@@ -391,35 +422,29 @@ public class MainService extends Service {
         Intent i = new Intent(this, DialogActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         startActivity(i);
-
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                showNotification(); //may move into DialogActivity onResume
-            }};
-        Handler mHandler = new Handler();
-        mHandler.postDelayed(r, 2000); //1 second to load activity
     }
 
     private void showSystemAlert(){
-        showNotification();
 
         Log.v(TAG, "show dialog");
 
         final Dialog dialog = new Dialog(this);
+        dialog.setContentView(R.layout.activity_dialog);
 
-        dialog.setContentView(R.layout.dialog);
+        //dialog.setContentView(R.layout.dialog);
         dialog.setTitle(GlobalSettings.gDialogHead);
 
-        TextView dialogText = (TextView) dialog.findViewById(R.id.dialogText);
+        TextView dialogText = (TextView) dialog.findViewById(R.id.activityText);
         dialogText.setText(GlobalSettings.gDialogBody);
 
-        Button dialogGoToButton = (Button) dialog.findViewById(R.id.dialogGoToButton);
+        Button dialogGoToButton = (Button) dialog.findViewById(R.id.activityGoToButton);
         dialogGoToButton.setText(GlobalSettings.gDialogGoToButton);
 
-        Button dialogExistButton = (Button) dialog.findViewById(R.id.dialogExistButton);
+        Button dialogExistButton = (Button) dialog.findViewById(R.id.activityExitButton);
         dialogExistButton.setText(GlobalSettings.gDialogExistButton);
 
+        WebView activityWebView = (WebView) dialog.findViewById(R.id.activityWebView);
+        activityWebView.setVisibility(View.GONE);
 
         dialogGoToButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -442,6 +467,8 @@ public class MainService extends Service {
 
         dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
         dialog.show();
+
+        new Notifier(this).alert();
     }
 
     private void showToast(final String sOutput) {

@@ -64,6 +64,9 @@
         <service android:name=".BackEnd.Service.EventService.SoundDetectionService" >
         </service>
 
+        <service android:name=".BackEnd.Service.EventService.PhoneDetectionService" >
+        </service>
+
         <service android:name=".BackEnd.Service.EventService.GPSDetectionService" >
         </service>
 

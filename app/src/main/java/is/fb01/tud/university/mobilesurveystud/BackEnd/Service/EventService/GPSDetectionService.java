@@ -15,7 +15,7 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
  */
 public class GPSDetectionService extends EventDetectorServiceBase implements GpsStatus.Listener {
 
-    static final public String TAG = "GPSToggledReceiver";
+    static final public String TAG = "GPSDetector";
 
     LocationManager mLocationManager;
 
@@ -50,11 +50,7 @@ public class GPSDetectionService extends EventDetectorServiceBase implements Gps
         Log.v(TAG, "onGpsStatusChanged: " + event);
 
         if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-            Iterable<GpsSatellite>satellites = mLocationManager.getGpsStatus(null).getSatellites();
-            if (satellites.iterator().hasNext())
-                onEvent(GlobalSettings.gGPSEventWait);
-            else
-                Log.v(TAG, "No satellites");
+            onEvent(GlobalSettings.gGPSEventWait);
         }
     }
 }
