@@ -29,8 +29,8 @@ import java.util.Vector;
 
 import is.fb01.tud.university.mobilesurveystud.BackEnd.DatabaseConnector;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.GPSDetectionService;
-import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.PhoneDetectionService;
-import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.SoundDetectionService;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.PhoneDetectionService;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.SoundDetectionService;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.Notifier;
@@ -118,7 +118,7 @@ public class MainService extends Service {
                 long millsStart = intent.getLongExtra(getString(R.string.millsStart), -1);
                 long millsEnd = intent.getLongExtra(getString(R.string.millsEnd) , -1);
 
-                Log.v(TAG,"onReceiveMessage from Service: " + sender);
+                Log.v(TAG,"onReceiveMessage from Service: " + sender + " isActive: " + isActive );
 
                 assert millsStart != -1;
                 assert millsEnd   != -1;

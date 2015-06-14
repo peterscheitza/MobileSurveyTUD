@@ -5,8 +5,11 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.database.ContentObserver;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.media.AudioManager;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
@@ -33,6 +36,13 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
     private WindowManager mWindowManager;
     //private LinearLayout mTouchLayout;
     private View mTouchLayout;
+
+
+
+
+
+    AudioManager mAudioManager;
+    AudioObserver mAudioObserver;
 
     @Override
     public String getTag() {
@@ -66,6 +76,14 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
         mWindowManager.addView(mTouchLayout, mParams);
 
         Log.i(TAG, "added View");
+
+
+
+        mAudioManager = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
+
+
+        mAudioObserver = new AudioObserver(mAudioManager, new Handler());
+        getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mAudioObserver );
     }
 
 
@@ -79,6 +97,12 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
                 Log.i(TAG, "removed View");
             }
         }
+
+
+
+
+
+        getApplicationContext().getContentResolver().unregisterContentObserver(mAudioObserver);
 
         super.onDestroy();
     }
@@ -111,32 +135,32 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
     }
 
     private class onKeyLinearLayout extends View {
-        onKeyLinearLayout(Context context){
+        onKeyLinearLayout(Context context) {
             super(context);
         }
 
         @Override
         public boolean dispatchKeyEvent(KeyEvent event) {
-            Log.v(TAG,"dis");
+            Log.v(TAG, "dis");
             mWindowManager.removeView(mTouchLayout);
             return super.dispatchKeyEvent(event);
         }
 
         @Override
         public boolean onKeyDown(int keyCode, KeyEvent event) {
-            Log.v(TAG,"down");
+            Log.v(TAG, "down");
             return super.onKeyDown(keyCode, event);
         }
 
         @Override
-        public boolean dispatchGenericMotionEvent (MotionEvent event) {
-            Log.v(TAG,"gm");
+        public boolean dispatchGenericMotionEvent(MotionEvent event) {
+            Log.v(TAG, "gm");
             return super.dispatchGenericMotionEvent(event);
         }
 
         @Override
-        public boolean dispatchKeyShortcutEvent  (KeyEvent event) {
-            Log.v(TAG,"short");
+        public boolean dispatchKeyShortcutEvent(KeyEvent event) {
+            Log.v(TAG, "short");
             return super.dispatchKeyShortcutEvent(event);
         }
 
@@ -159,5 +183,69 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
             }
         }
 
+
     }
+
+
+
+
+
+
+        private class AudioObserver extends ContentObserver {
+            AudioManager mAudioManager;
+            int previousStreamVolume;
+            int previousNotificationVolume;
+            int previousRingVolume;
+            int previousSystemVolume;
+
+            public AudioObserver(AudioManager audioManager, Handler handler) {
+                super(handler);
+                mAudioManager = audioManager;
+
+                previousStreamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                previousNotificationVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                previousRingVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_RING);
+                previousSystemVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+            }
+
+            @Override
+            public void onChange(boolean selfChange) {
+                super.onChange(selfChange);
+
+                int currentStreamVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+                int currentNotificationVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_NOTIFICATION);
+                int currentRingVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_RING);
+                int currentSystemVolume = mAudioManager.getStreamVolume(AudioManager.STREAM_SYSTEM);
+
+                if(previousStreamVolume - currentStreamVolume != 0) {
+                    Log.v(TAG, "adjusted stream volume");
+                    previousStreamVolume = currentStreamVolume;
+                    onEvent(GlobalSettings.gSoundEventWait);
+                    return;
+                }
+
+                if(previousNotificationVolume - currentNotificationVolume != 0) {
+                    Log.v(TAG, "adjusted notification volume");
+                    previousNotificationVolume = currentNotificationVolume;
+                    onEvent(GlobalSettings.gSoundEventWait);
+                    return;
+                }
+
+                if(previousRingVolume - currentRingVolume != 0) {
+                    Log.v(TAG, "adjusted ring volume");
+                    previousRingVolume = currentRingVolume;
+                    onEvent(GlobalSettings.gSoundEventWait);
+                    return;
+                }
+
+                if(previousSystemVolume - currentSystemVolume != 0) {
+                    Log.v(TAG, "adjusted system volume");
+                    previousSystemVolume = currentSystemVolume;
+                    onEvent(GlobalSettings.gSoundEventWait);
+                    return;
+                }
+
+            }
+        }
+
 }
