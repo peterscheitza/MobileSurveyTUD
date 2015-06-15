@@ -57,11 +57,11 @@ public abstract class HandlerDetectorServiceBase extends DetectorServiceBase {
                     }
                 }
                 else {
-                    if(isActive) {
+                   // if(isActive) {
                         isActive = false;
                         sendBroadcast(getTag());
                         //stopSelf();
-                    }
+                  //  }
                 }
 
                 mCheckConditionHandler.postDelayed(this, getHandlerDelay());

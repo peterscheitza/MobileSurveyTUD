@@ -83,6 +83,7 @@ public class MainService extends Service {
         super.onCreate();
         Log.v(TAG,"onServiceConnected");
 
+
         Notification notification  = new Notification.Builder(this)
                 .setContentTitle("MobileSurveysTUD")
                 .setSmallIcon(R.drawable.ms_tud)
@@ -452,7 +453,7 @@ public class MainService extends Service {
                 dialog.dismiss();
 
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gSurveyURL));
+                i.setData(Uri.parse(GlobalSettings.gGetURLWithID()));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
             }

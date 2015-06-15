@@ -1,6 +1,7 @@
 package is.fb01.tud.university.mobilesurveystud;
 
-import java.util.Vector;
+import android.content.Context;
+import android.content.SharedPreferences;
 
 /**
  * Created by peter_000 on 11.05.2015.
@@ -13,13 +14,16 @@ public class GlobalSettings {
     final public static int gResetShowCounter = 24*60*60*1000; //time in mills
     final public static int gMaxShowCounter = 9999999;
 
-    final public static String gDialogHead = "Dialog head: Hello asshole";
-    final public static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey you useless bitch";
+    final public static String gDialogHead = "Dialog head: Hello";
+    final public static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey";
     final public static String gDialogGoToButton = "Go to survey";
     final public static String gDialogExistButton = "Not now";
 
-    final public static String gSurveyURL = "http://www.golem.de"; //needs to start with "http://" or "https://"
-
+    public static String gUserId = "";
+    public static String gSurveyURL = "http://www.golem.de/"; //needs to start with "http://" or "https://"
+    public static String gGetURLWithID(){
+        return gSurveyURL + gUserId;
+    }
 
 
     //Additional Settings:

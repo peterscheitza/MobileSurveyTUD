@@ -11,9 +11,11 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.GyroscopeService;
 
@@ -94,6 +96,11 @@ public class MainActivity extends ActionBarActivity {
             toggleAdditionalButton.setText("Use additional services");
 
 
+        String sId = mSharedPref.getString(getString(R.string.user_id), "");
+        EditText edittext = (EditText) findViewById(R.id.editText);
+        edittext.setText(sId);
+
+        GlobalSettings.gUserId = sId;
 
     }
 
@@ -191,6 +198,23 @@ public class MainActivity extends ActionBarActivity {
 
         editor.commit();
     }
+
+    public void buttonSaveId(View v){
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+
+        EditText edittext = (EditText) findViewById(R.id.editText);
+        String sId = edittext.getText().toString();
+
+        if(!sId.equals("") && sId != null && !sId.isEmpty()) {
+            editor.putString(getString(R.string.user_id), sId);
+            editor.commit();
+            GlobalSettings.gUserId = sId;
+
+            Toast.makeText(this, "Saved ID: " + sId , Toast.LENGTH_SHORT).show();
+        }
+    }
+
 
 
     private boolean isServiceRunning(Class<?> serviceClass) {
