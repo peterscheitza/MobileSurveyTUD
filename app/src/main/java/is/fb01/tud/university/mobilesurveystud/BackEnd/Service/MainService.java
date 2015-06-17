@@ -191,6 +191,8 @@ public class MainService extends Service {
     @Override
     public void onDestroy() {
 
+        super.onDestroy();
+
         Log.v(TAG,"onServiceClose");
 
         //LocalBroadcastManager.getInstance(this)....
@@ -209,7 +211,7 @@ public class MainService extends Service {
             Intent intent = new Intent(this, MainService.class);
             PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
             AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30 * 1000, pintent);
+            alarm.set(AlarmManager.RTC_WAKEUP, GlobalSettings.gTryToRestartMain, pintent);
         }
         else if(isMainState == State.OFF) {
             Log.v(TAG, "allowed to close,good bye");
@@ -218,7 +220,7 @@ public class MainService extends Service {
             Log.v(TAG, "could not get service state, close for safety reasons");
         }
 
-        super.onDestroy();
+        //super.onDestroy();
     }
 
     @Override
@@ -526,7 +528,7 @@ public class MainService extends Service {
             Intent intent = new Intent(this, MainService.class);
             PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
             AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), lSleepDuration, pintent);
+            alarm.set(AlarmManager.RTC_WAKEUP, lSleepDuration, pintent);
 
             stopSelf();
 
