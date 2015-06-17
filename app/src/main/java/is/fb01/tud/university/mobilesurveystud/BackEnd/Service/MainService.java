@@ -84,12 +84,7 @@ public class MainService extends Service {
         super.onCreate();
         Log.v(TAG,"onServiceConnected");
 
-        Notification notification  = new Notification.Builder(this)
-                .setContentTitle("MobileSurveysTUD")
-                .setSmallIcon(R.drawable.ms_tud)
-                .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.athena))
-                .build();
-
+        Notification notification  = new Notifier(this).getForgroundNotification();
         startForeground(1,notification);
 
 
