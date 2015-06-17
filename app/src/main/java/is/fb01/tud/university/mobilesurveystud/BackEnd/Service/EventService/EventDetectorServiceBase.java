@@ -42,9 +42,6 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
     public void onDestroy() {
         mEventHandler.removeCallbacksAndMessages(null);
 
-        isActive = false;
-        sendBroadcast(getTag());
-
         super.onDestroy();
     }
 

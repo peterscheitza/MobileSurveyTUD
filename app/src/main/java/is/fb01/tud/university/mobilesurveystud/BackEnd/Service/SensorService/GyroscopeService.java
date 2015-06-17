@@ -114,20 +114,6 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
     }
 
 
-    /*private void checkForBroadcast(){
-        if(mMotionSumm > GlobalSettings.gGyroThreshold){
-            isMoving = true;
-            sendBroadcast(isMoving);
-        }else if (isMoving) {
-            isMoving = false;
-            sendBroadcast(isMoving);
-        }
-        //else do nothing here
-
-        Log.v(TAG, "isMoving: " + isMoving);
-    }*/
-
-
     private float[] absMatrixDiff(float[] m1, float[]m2){
         int matrixSize = m1.length;
 

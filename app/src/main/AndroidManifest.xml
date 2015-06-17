@@ -34,7 +34,8 @@
             android:name=".FrontEnd.DialogActivity"
             android:label="@string/title_activity_dialog"
             android:showOnLockScreen="true"
-            android:noHistory="true">
+            android:noHistory="true"
+            android:excludeFromRecents="true" >
         </activity>
 
         <receiver android:name=".BackEnd.Receiver.BootCompletedReceiver">
@@ -52,7 +53,7 @@
         </receiver>
         -->
 
-        <service android:name=".BackEnd.Service.MainService" >
+        <service android:enabled="true" android:name=".BackEnd.Service.MainService" >
         </service>
 
         <service android:name=".BackEnd.Service.EventService.TouchDetectionService" >

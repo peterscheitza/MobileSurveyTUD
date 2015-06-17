@@ -12,7 +12,7 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
  */
 public abstract class HandlerDetectorServiceBase extends DetectorServiceBase {
 
-    static final public String SERVICETAG = "EventDetector";
+    static final public String SERVICETAG = "HandlerDetector";
 
     protected int mHandlerDelay;
     private Handler mCheckConditionHandler;

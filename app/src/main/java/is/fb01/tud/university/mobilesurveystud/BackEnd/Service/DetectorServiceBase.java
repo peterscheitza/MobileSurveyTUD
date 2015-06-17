@@ -56,6 +56,15 @@ public abstract class DetectorServiceBase extends Service {
     public void onDestroy() {
         Log.v(getTag(), "onServiceDisconnected");
 
+        //secures that mainService now that this service is not active it get killed
+        //the if clause is important: if you fire two isActive=false vasts it is possible to get in an endless loop
+        // -> first stop -> reset extended flag -> second stop -> restart
+
+        if(isActive) {
+            isActive = false;
+            sendBroadcast(getTag());
+        }
+
         super.onDestroy();
     }
 

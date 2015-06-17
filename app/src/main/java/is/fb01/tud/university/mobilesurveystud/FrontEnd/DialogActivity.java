@@ -91,7 +91,7 @@ public class DialogActivity extends ActionBarActivity {
                 }
             });
 
-            activityWebView.loadUrl(GlobalSettings.gSurveyURL);
+            activityWebView.loadUrl(GlobalSettings.gGetURLWithID());
         }
         else {
             activityWebView.setVisibility(View.GONE);

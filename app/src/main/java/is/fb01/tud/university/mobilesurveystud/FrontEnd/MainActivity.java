@@ -110,23 +110,23 @@ public class MainActivity extends ActionBarActivity {
         SharedPreferences.Editor editor = sharedPref.edit();
 
         if(isServiceRunning(MainService.class)){
-            stopService(mMainService);
             ((Button)v).setText("Start Service");
             Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
-            editor.putString(getString(R.string.setting_is_additional), MainService.State.OFF.toString());
+            editor.commit();
+
+            stopService(mMainService);
         }
         else{
             startService(mMainService);
             ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+            //editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString()); happens in service
         }
 
-        editor.commit();
+        //editor.commit();
     }
 
     public void buttonToggleGyro(View v){

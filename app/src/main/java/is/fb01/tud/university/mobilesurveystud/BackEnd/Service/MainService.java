@@ -1,8 +1,10 @@
 package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 
 import android.app.ActivityManager;
+import android.app.AlarmManager;
 import android.app.Dialog;
 import android.app.Notification;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -23,8 +25,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Vector;
 
 import is.fb01.tud.university.mobilesurveystud.BackEnd.DatabaseConnector;
@@ -52,9 +57,9 @@ public class MainService extends Service {
         ON,OFF,UNDEFINED
     }
 
-    static public enum ServiceType {
-        STANDARD,ADDITIONAL,ADDITIONAL_extended
-    }
+    private SharedPreferences mSharedPref;
+
+    private Handler mToastHandler;
 
     private BroadcastReceiver mLocalBroadcasteReceiver;
 
@@ -62,17 +67,13 @@ public class MainService extends Service {
     private BroadcastReceiver mDialogReceiver;
     private BroadcastReceiver waitForUnlockReceiver;
 
-
-    private Handler mToastHandler;
-
-
     private long mMillsStart = -1;
     private long mMillsEnd = -1;
     private boolean mIsScreenOn = true;
 
     HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
-    boolean mIsAdditionalRunning = false;
+    boolean mIsExtendedRunning = false;
 
     State mIsGyroState;
     State mIsUseAdditional;
@@ -83,17 +84,16 @@ public class MainService extends Service {
         super.onCreate();
         Log.v(TAG,"onServiceConnected");
 
-
         Notification notification  = new Notification.Builder(this)
                 .setContentTitle("MobileSurveysTUD")
                 .setSmallIcon(R.drawable.ms_tud)
                 .setLargeIcon(BitmapFactory.decodeResource(getResources(), R.drawable.athena))
                 .build();
 
-        startForeground(2,notification);
+        startForeground(1,notification);
 
-        mToastHandler = new Handler();
 
+        mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
@@ -104,6 +104,12 @@ public class MainService extends Service {
         String optionAdditional = getString(R.string.setting_is_additional);
         String sAddState = sharedPref.getString(optionAdditional, State.UNDEFINED.toString());
         mIsUseAdditional = State.valueOf(sAddState);
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+        editor.commit();
+
+        mToastHandler = new Handler();
 
 
         initServiceMaps();
@@ -134,7 +140,7 @@ public class MainService extends Service {
                     ServiceStruct struct = mServiceMap.get(sender);
 
                     struct.isActive = isActive;
-                    if(struct.mStop == ServiceStruct.stop.INACTIVITY && !isActive) {
+                    if(struct.checkStop(ServiceStruct.stopSituation.INACTIVITY) && !isActive) {
                         stopService(struct.mIntent);
                         struct.state = State.OFF;
                     }
@@ -144,11 +150,10 @@ public class MainService extends Service {
                     assert false;
                 }
 
-                if(mIsUseAdditional == State.ON) {
-                    if (!mIsAdditionalRunning && isStandardInactivity() && mIsScreenOn) {
-                        startServiceEvent(ServiceStruct.start.ADDITIONAL);
-                        mIsAdditionalRunning = true;
-                    }
+
+                if (!mIsExtendedRunning && isStandardInactivity() && mIsScreenOn) {
+                    startServiceEvent(ServiceStruct.startSituation.EXTEND);
+                    mIsExtendedRunning = true;
                 }
 
 
@@ -157,21 +162,6 @@ public class MainService extends Service {
         };
         IntentFilter localFilter = new IntentFilter(DetectorServiceBase.MSG);
         LocalBroadcastManager.getInstance(this).registerReceiver(mLocalBroadcasteReceiver, localFilter);
-
-
-
-        mPowerButtonReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.v(TAG,"onReceiveMessage from Screen: " + intent.toString() );
-                handlePowerButton(intent);
-            }
-        };
-        IntentFilter filterOnOff = new IntentFilter();
-        filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
-        filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
-        registerReceiver(mPowerButtonReceiver, filterOnOff);
-
 
 
         mDialogReceiver = new BroadcastReceiver() {
@@ -185,6 +175,17 @@ public class MainService extends Service {
         LocalBroadcastManager.getInstance(this).registerReceiver(mDialogReceiver, filterDialogActivity);
 
 
+        mPowerButtonReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.v(TAG,"onReceiveMessage from Screen: " + intent.toString() );
+                handlePowerButton(intent);
+            }
+        };
+        IntentFilter filterOnOff = new IntentFilter();
+        filterOnOff.addAction(Intent.ACTION_SCREEN_OFF);
+        filterOnOff.addAction(Intent.ACTION_SCREEN_ON);
+        registerReceiver(mPowerButtonReceiver, filterOnOff);
     }
 
     @Override
@@ -194,17 +195,35 @@ public class MainService extends Service {
 
     @Override
     public void onDestroy() {
-        super.onDestroy();
+
+        Log.v(TAG,"onServiceClose");
 
         //LocalBroadcastManager.getInstance(this)....
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mLocalBroadcasteReceiver);
-        unregisterReceiver(this.mPowerButtonReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
+        unregisterReceiver(this.mPowerButtonReceiver);
 
         //stop all services
-        stopServiceEvent(ServiceStruct.stop.NEVER);
-        stopServiceEvent(ServiceStruct.stop.SCREEN_OFF);
-        stopServiceEvent(ServiceStruct.stop.INACTIVITY);
+        for (ServiceStruct.stopSituation s : ServiceStruct.stopSituation.values())
+            stopServiceEvent(s);
+
+        String sIsMainState = mSharedPref.getString(getString(R.string.setting_is_active),State.UNDEFINED.toString());
+        State isMainState = State.valueOf(sIsMainState);
+        if(isMainState == State.ON) {
+            Log.v(TAG, "not allowed to close, restart soon");
+            Intent intent = new Intent(this, MainService.class);
+            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+            AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 30 * 1000, pintent);
+        }
+        else if(isMainState == State.OFF) {
+            Log.v(TAG, "allowed to close,good bye");
+        }
+        else {
+            Log.v(TAG, "could not get service state, close for safety reasons");
+        }
+
+        super.onDestroy();
     }
 
     @Override
@@ -227,32 +246,36 @@ public class MainService extends Service {
         Intent acceleromterService = new Intent(this, AccelerometerService.class);
         Intent phoneService = new Intent(this, PhoneDetectionService.class);
 
-        mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceStruct.start.SCREEN_ON, ServiceStruct.stop.SCREEN_OFF));
+        mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceStruct.startSituation.SCREEN_ON, ServiceStruct.stopSituation.SCREEN_OFF));
 
-        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
-        mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
-        mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
+        List<ServiceStruct.stopSituation> soundStop = Arrays.asList(ServiceStruct.stopSituation.SCREEN_OFF, ServiceStruct.stopSituation.INACTIVITY);
+        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.startSituation.EXTEND, soundStop));
 
-        mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, ServiceStruct.start.SCREEN_OFF, ServiceStruct.stop.INACTIVITY));
+        List<ServiceStruct.startSituation> phoneStart = Arrays.asList(ServiceStruct.startSituation.EXTEND, ServiceStruct.startSituation.SCREEN_OFF);
+        mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, phoneStart, ServiceStruct.stopSituation.INACTIVITY));
+
+        if(mIsUseAdditional == State.ON) {
+            mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
+            mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
+        }
 
         if(mIsGyroState == State.ON)
-            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.start.ADDITIONAL, ServiceStruct.stop.INACTIVITY));
+            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             serviceStruct.isActive = false;
             serviceStruct.state = State.OFF;
         }
 
-        startServiceEvent(ServiceStruct.start.SCREEN_ON);
+        startServiceEvent(ServiceStruct.startSituation.SCREEN_ON);
     }
 
-
-    private void stopServiceEvent(ServiceStruct.stop stop) {
+    private void stopServiceEvent(ServiceStruct.stopSituation stop) {
 
         Log.v(TAG,"stopServiceEvent: " + stop );
 
         for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.ON && serviceStruct.mStop == stop) {
+            if (serviceStruct.state == State.ON && serviceStruct.checkStop(stop)) {
                 stopService(serviceStruct.mIntent);
                 serviceStruct.state = State.OFF;
                 serviceStruct.isActive = false;
@@ -260,12 +283,12 @@ public class MainService extends Service {
         }
     }
 
-    private void startServiceEvent(ServiceStruct.start start) {
+    private void startServiceEvent(ServiceStruct.startSituation start) {
 
         Log.v(TAG,"startServiceEvent: " + start );
 
         for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.OFF && serviceStruct.mStart == start) {
+            if (serviceStruct.state == State.OFF && serviceStruct.checkStart(start)) {
                 startService(serviceStruct.mIntent);
                 serviceStruct.state = State.ON;
                 serviceStruct.isActive = true; //assume activity
@@ -273,58 +296,22 @@ public class MainService extends Service {
         }
     }
 
-    /*private void startAdditionalServices() {
-        for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.OFF
-                    && (serviceStruct.type == ServiceType.ADDITIONAL || serviceStruct.type == ServiceType.ADDITIONAL_extended) ) {
-                startService(serviceStruct.intent);
-                serviceStruct.state = State.ON;
-                serviceStruct.isActive = true; //assume activity first
-            }
-        }
-    }
 
 
-    private void stopAdditionalServices(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.type == ServiceType.ADDITIONAL) {
-                stopService(serviceStruct.intent);
-                serviceStruct.state = State.OFF;
-                serviceStruct.isActive = false;
-            }
-        }
-    }
 
-    private void startStandardServices(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.OFF && serviceStruct.type == ServiceType.STANDARD) {
-                startService(serviceStruct.intent);
-                serviceStruct.state = State.ON;
-                serviceStruct.isActive = false;
-            }
-        }
-    }
 
-    private void stopStandardServices(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.type == ServiceType.STANDARD) {
-                stopService(serviceStruct.intent);
-                serviceStruct.state = State.OFF;
-                serviceStruct.isActive = false;
-            }
-        }
-    }*/
 
     private void handlePowerButton(Intent intent){
         Log.v(TAG,"screen turned off/on");
 
         if(intent.getAction() == Intent.ACTION_SCREEN_OFF) {
             mIsScreenOn = false;
-            stopServiceEvent(ServiceStruct.stop.SCREEN_OFF);
+            stopServiceEvent(ServiceStruct.stopSituation.SCREEN_OFF);
+            startServiceEvent(ServiceStruct.startSituation.SCREEN_OFF);
         }
         else if(intent.getAction() == Intent.ACTION_SCREEN_ON) {
             mIsScreenOn = true;
-            startServiceEvent(ServiceStruct.start.SCREEN_ON);
+            startServiceEvent(ServiceStruct.startSituation.SCREEN_ON);
         }
     }
 
@@ -335,7 +322,7 @@ public class MainService extends Service {
                 Log.v(TAG,"onReceiveMessage from user present");
 
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gSurveyURL));
+                i.setData(Uri.parse(GlobalSettings.gGetURLWithID()));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
 
@@ -347,6 +334,11 @@ public class MainService extends Service {
         filterUserPresent.addAction(Intent.ACTION_USER_PRESENT);
         registerReceiver(waitForUnlockReceiver,filterUserPresent);
     }
+
+
+
+
+
 
     private boolean isInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
@@ -360,7 +352,7 @@ public class MainService extends Service {
 
     private boolean isStandardInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.mStart != ServiceStruct.start.ADDITIONAL) {
+            if(serviceStruct.state == State.ON && !serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
                 if(serviceStruct.isActive)
                     return false;
             }
@@ -368,15 +360,16 @@ public class MainService extends Service {
         return true;
     }
 
-   /* private boolean isAdditionalInactivity(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.type == ServiceType.ADDITIONAL) {
-                if(serviceStruct.isActive)
-                    return false;
-            }
-        }
-        return true;
-    }*/
+
+
+
+
+
+
+    private boolean randomFunction(){
+        int randomInt = new Random().nextInt(100);
+        return randomInt <= GlobalSettings.gPercentageToShow;
+    }
 
     private boolean isShowADialog() {
         long activityDuration = mMillsEnd - mMillsStart;
@@ -385,14 +378,15 @@ public class MainService extends Service {
 
         if(isInactivity()) {
             if (activityDuration > GlobalSettings.gMinUseDuration) {
-                showToast("MS: Please answer survey, bitch!");
+                if(randomFunction()) {
+                    showADialog();
 
-                showADialog();
-
-                resetParameter();
-                return true;
+                    resetParameter();
+                    return true;
+                }
+                Log.v(TAG, "dialog was canceled due random function");
             }
-
+            Log.v(TAG, "dialog was canceled due too short activity");
             resetParameter();
         }
         return false;
@@ -400,6 +394,7 @@ public class MainService extends Service {
 
     private void showADialog(){
         if(checkShownCounter()) {
+            showToast("Please answer!");
             if (mIsScreenOn) {
                 if (!areAppsExceptional(getForegroundApps()))
                     showSystemAlert();
@@ -414,7 +409,7 @@ public class MainService extends Service {
     private void resetParameter(){
         mMillsStart = -1;
         mMillsEnd = -1;
-        mIsAdditionalRunning = false;
+        mIsExtendedRunning = false;
     }
 
     private void showActivity() {
@@ -482,17 +477,19 @@ public class MainService extends Service {
         Log.v(TAG,sOutput);
     }
 
+
+
+
     //besser als alert
     private boolean checkShownCounterUpdate(){
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        long lLastCounterUpdate = sharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
+        long lLastCounterUpdate = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
         long nextUpdateDue = lLastCounterUpdate + GlobalSettings.gResetShowCounter;
         long currentTimeMills = System.currentTimeMillis();
 
         if(currentTimeMills > nextUpdateDue) {
             Log.v(TAG,"reset show counter");
 
-            SharedPreferences.Editor editor = sharedPref.edit();
+            SharedPreferences.Editor editor = mSharedPref.edit();
             editor.putLong(getString(R.string.lastCounterUpdate), currentTimeMills);
             editor.putInt(getString(R.string.dialogShownCounter), 0);
             editor.commit();
@@ -505,20 +502,42 @@ public class MainService extends Service {
 
         checkShownCounterUpdate();
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        int lCounter = sharedPref.getInt(getString(R.string.dialogShownCounter), 0);
+        int lCounter = mSharedPref.getInt(getString(R.string.dialogShownCounter), 0);
 
 
-        Log.v(TAG, "" + lCounter + " <= " + GlobalSettings.gMaxShowCounter );
-        if(lCounter <= GlobalSettings.gMaxShowCounter){
-            SharedPreferences.Editor editor = sharedPref.edit();
+        Log.v(TAG, "" + lCounter + " < " + GlobalSettings.gMaxShowCounter );
+        if(lCounter < GlobalSettings.gMaxShowCounter){
+            SharedPreferences.Editor editor = mSharedPref.edit();
             int newCounter = lCounter + 1;
             editor.putInt(getString(R.string.dialogShownCounter), newCounter);
             editor.commit();
             return true;
         }
-        Log.v(TAG,"shown dialog to much, wait for reset");
-        return false;
+        else {
+
+            long lLastCounterUpdate = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
+            if(lLastCounterUpdate == 0) {
+                Log.v(TAG, "unable to read last counter update to set alarm manager");
+                assert true;
+                return false;
+            }
+
+            SharedPreferences.Editor editor = mSharedPref.edit();
+            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+            editor.commit();
+
+            long lSleepDuration = (lLastCounterUpdate + GlobalSettings.gResetShowCounter) - System.currentTimeMillis();
+
+            Intent intent = new Intent(this, MainService.class);
+            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+            AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+            alarm.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), lSleepDuration, pintent);
+
+            stopSelf();
+
+            Log.v(TAG, "shown dialog to much, wait for: " + lSleepDuration);
+            return false;
+        }
     }
 
     private boolean areAppsExceptional( Vector<String> appeNameVec){
@@ -538,11 +557,6 @@ public class MainService extends Service {
         return false;
     }
 
-    private void addAppToExceptionList(String sAppName) {
-        DatabaseConnector connector = new DatabaseConnector(this);
-
-        connector.insert(sAppName);
-    }
 
     private Vector<String> getForegroundApps() {
 
@@ -560,6 +574,12 @@ public class MainService extends Service {
                 toReturn.add(info.processName);
         }
         return toReturn;
+    }
+
+    private void addAppToExceptionList(String sAppName) {
+        DatabaseConnector connector = new DatabaseConnector(this);
+
+        connector.insert(sAppName);
     }
 
     private boolean isGPSEnabled(){
