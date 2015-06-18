@@ -8,11 +8,12 @@ import android.content.SharedPreferences;
  */
 public class GlobalSettings {
 
-    final public static int gEventWait   = 30000; // 30 Seconds
-    final public static int gMinUseDuration    = 30000; // 2min
+    final public static int gEventWait   = 30*1000; // 30 Seconds
+    final public static int gMinUseDuration    = 30*1000; //
 
     final public static int gResetShowCounter = 5*60*1000; //time in mills
     final public static int gMaxShowCounter = 1;
+    final public static int gIdleAfterShow = 30*60*1000;
 
     final public static int gPercentageToShow = 100;
 
@@ -26,6 +27,9 @@ public class GlobalSettings {
     public static String gGetURLWithID(){
         return gSurveyURL + gUserId;
     }
+
+
+
 
 
     //Additional Settings:

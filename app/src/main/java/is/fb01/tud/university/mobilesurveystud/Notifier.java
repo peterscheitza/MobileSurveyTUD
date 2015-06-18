@@ -62,6 +62,8 @@ public class Notifier {
                 .setLargeIcon(BitmapFactory.decodeResource(mContext.getResources(), R.drawable.athena))
                 .build();
 
+        notification.flags |= Notification.FLAG_NO_CLEAR | Notification.FLAG_ONGOING_EVENT;
+
         return notification;
     }
 }

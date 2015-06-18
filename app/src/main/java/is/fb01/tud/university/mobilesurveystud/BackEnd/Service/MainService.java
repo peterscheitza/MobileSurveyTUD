@@ -214,6 +214,7 @@ public class MainService extends Service {
             alarm.set(AlarmManager.RTC_WAKEUP, GlobalSettings.gTryToRestartMain, pintent);
         }
         else if(isMainState == State.OFF) {
+            stopForeground(false);
             Log.v(TAG, "allowed to close,good bye");
         }
         else {
@@ -243,17 +244,18 @@ public class MainService extends Service {
         Intent acceleromterService = new Intent(this, AccelerometerService.class);
         Intent phoneService = new Intent(this, PhoneDetectionService.class);
 
+        List<ServiceStruct.stopSituation> offAndInactive = Arrays.asList(ServiceStruct.stopSituation.SCREEN_OFF, ServiceStruct.stopSituation.INACTIVITY);
+
         mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceStruct.startSituation.SCREEN_ON, ServiceStruct.stopSituation.SCREEN_OFF));
 
-        List<ServiceStruct.stopSituation> soundStop = Arrays.asList(ServiceStruct.stopSituation.SCREEN_OFF, ServiceStruct.stopSituation.INACTIVITY);
-        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.startSituation.EXTEND, soundStop));
+        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.startSituation.EXTEND, offAndInactive));
 
         List<ServiceStruct.startSituation> phoneStart = Arrays.asList(ServiceStruct.startSituation.EXTEND, ServiceStruct.startSituation.SCREEN_OFF);
         mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, phoneStart, ServiceStruct.stopSituation.INACTIVITY));
 
         if(mIsUseAdditional == State.ON) {
-            mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
-            mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
+            mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, offAndInactive));
+            mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, offAndInactive));
         }
 
         if(mIsGyroState == State.ON)
@@ -324,6 +326,8 @@ public class MainService extends Service {
                 startActivity(i);
 
                 unregisterReceiver(waitForUnlockReceiver);
+
+                goIdle(GlobalSettings.gIdleAfterShow);
             }
         };
 
@@ -376,10 +380,13 @@ public class MainService extends Service {
         if(isInactivity()) {
             if (activityDuration > GlobalSettings.gMinUseDuration) {
                 if(randomFunction()) {
-                    showADialog();
+                    if(checkShownCounter()) {
+                        showADialog();
 
-                    resetParameter();
-                    return true;
+                        resetParameter();
+                        return true;
+                    }
+                    Log.v(TAG, "dialog was canceled due show counter");
                 }
                 Log.v(TAG, "dialog was canceled due random function");
             }
@@ -389,19 +396,19 @@ public class MainService extends Service {
         return false;
     }
 
-    private void showADialog(){
-        if(checkShownCounter()) {
-            showToast("Please answer!");
-            if (mIsScreenOn) {
-                if (!areAppsExceptional(getForegroundApps()))
-                    showSystemAlert();
-                else
-                    Log.v(TAG, "app is exceptional!");
-            } else {
-                showActivity();
-            }
+    private void showADialog() {
+
+        showToast("Please answer!");
+        if (mIsScreenOn) {
+            if (!areAppsExceptional(getForegroundApps()))
+                showSystemAlert();
+            else
+                Log.v(TAG, "app is exceptional!");
+        } else {
+            showActivity();
         }
     }
+
 
     private void resetParameter(){
         mMillsStart = -1;
@@ -448,6 +455,8 @@ public class MainService extends Service {
                 i.setData(Uri.parse(GlobalSettings.gGetURLWithID()));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(i);
+
+                goIdle(GlobalSettings.gIdleAfterShow);
             }
         });
 
@@ -473,6 +482,7 @@ public class MainService extends Service {
         });
         Log.v(TAG,sOutput);
     }
+
 
 
 
@@ -519,16 +529,10 @@ public class MainService extends Service {
                 return false;
             }
 
-            SharedPreferences.Editor editor = mSharedPref.edit();
-            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
-            editor.commit();
 
             long lSleepDuration = (lLastCounterUpdate + GlobalSettings.gResetShowCounter) - System.currentTimeMillis();
+            goIdle(lSleepDuration);
 
-            Intent intent = new Intent(this, MainService.class);
-            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
-            AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-            alarm.set(AlarmManager.RTC_WAKEUP, lSleepDuration, pintent);
 
             stopSelf();
 
@@ -536,6 +540,11 @@ public class MainService extends Service {
             return false;
         }
     }
+
+
+
+
+
 
     private boolean areAppsExceptional( Vector<String> appeNameVec){
         DatabaseConnector connector = new DatabaseConnector(this);
@@ -582,5 +591,25 @@ public class MainService extends Service {
     private boolean isGPSEnabled(){
         LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
         return  (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER));
+    }
+
+
+
+
+
+    private void goIdle(long lIdleTime){
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+        editor.commit();
+
+        Intent intent = new Intent(this, MainService.class);
+        PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
+        AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
+        alarm.set(AlarmManager.RTC_WAKEUP, lIdleTime, pintent);
+
+        stopSelf();
+
+        Log.v(TAG, "going idle for: " + lIdleTime);
     }
 }
