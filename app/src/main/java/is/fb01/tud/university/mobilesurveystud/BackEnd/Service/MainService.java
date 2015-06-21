@@ -6,6 +6,7 @@ import android.app.Dialog;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.ActivityNotFoundException;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -57,6 +58,8 @@ public class MainService extends Service {
         ON,OFF,UNDEFINED
     }
 
+    private Context mContext;
+
     private SharedPreferences mSharedPref;
 
     private Handler mToastHandler;
@@ -87,6 +90,8 @@ public class MainService extends Service {
         Notification notification  = new Notifier(this).getForgroundNotification();
         startForeground(1,notification);
 
+
+        mContext = this;
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
@@ -319,9 +324,16 @@ public class MainService extends Service {
                 Log.v(TAG,"onReceiveMessage from user present");
 
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gGetURLWithID()));
+                i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                i.setPackage("com.android.chrome");
+                try {
+                    startActivity(i);
+                } catch (ActivityNotFoundException ex) {
+                    // Chrome browser presumably not installed so allow user to choose instead
+                    i.setPackage(null);
+                    startActivity(i);
+                }
 
                 unregisterReceiver(waitForUnlockReceiver);
 
@@ -436,10 +448,10 @@ public class MainService extends Service {
         TextView dialogText = (TextView) dialog.findViewById(R.id.activityText);
         dialogText.setText(GlobalSettings.gDialogBody);
 
-        Button dialogGoToButton = (Button) dialog.findViewById(R.id.activityGoToButton);
+        final Button dialogGoToButton = (Button) dialog.findViewById(R.id.activityGoToButton);
         dialogGoToButton.setText(GlobalSettings.gDialogGoToButton);
 
-        Button dialogExistButton = (Button) dialog.findViewById(R.id.activityExitButton);
+        final Button dialogExistButton = (Button) dialog.findViewById(R.id.activityExitButton);
         dialogExistButton.setText(GlobalSettings.gDialogExistButton);
 
         WebView activityWebView = (WebView) dialog.findViewById(R.id.activityWebView);
@@ -449,11 +461,20 @@ public class MainService extends Service {
             @Override
             public void onClick(View v) {
                 dialog.dismiss();
+                dialogGoToButton.setOnClickListener(null);
+                dialogExistButton.setOnClickListener(null);
 
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gGetURLWithID()));
+                i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
                 i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                startActivity(i);
+                i.setPackage("com.android.chrome");
+                try {
+                    startActivity(i);
+                } catch (ActivityNotFoundException ex) {
+                    // Chrome browser presumably not installed so allow user to choose instead
+                    i.setPackage(null);
+                    startActivity(i);
+                }
 
                 goIdle(GlobalSettings.gIdleAfterShow);
             }
@@ -462,6 +483,8 @@ public class MainService extends Service {
         dialogExistButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                dialogGoToButton.setOnClickListener(null);
+                dialogExistButton.setOnClickListener(null);
                 dialog.dismiss();
             }
         });

@@ -157,8 +157,6 @@ public class MainActivity extends Activity {
         String sId = mSharedPref.getString(getString(R.string.user_id), "");
         EditText edittext = (EditText) findViewById(R.id.editText);
         edittext.setText(sId);
-
-        GlobalSettings.gUserId = sId;
     }
 
     public void buttonToggleService(View v){
@@ -272,7 +270,6 @@ public class MainActivity extends Activity {
         if(!sId.equals("") && sId != null && !sId.isEmpty()) {
             editor.putString(getString(R.string.user_id), sId);
             editor.commit();
-            GlobalSettings.gUserId = sId;
 
             Toast.makeText(this, "Saved ID: " + sId , Toast.LENGTH_SHORT).show();
         }

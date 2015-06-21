@@ -22,10 +22,12 @@ public class GlobalSettings {
     final public static String gDialogGoToButton = "Go to survey";
     final public static String gDialogExistButton = "Not now";
 
-    public static String gUserId = "";
-    public static String gSurveyURL = "http://www.golem.de/"; //needs to start with "http://" or "https://"
-    public static String gGetURLWithID(){
-        return gSurveyURL + gUserId;
+    public static String gSurveyURL = "http://www.golem.de/specials/android-5.="; //needs to start with "http://" or "https://"
+    public static String gGetURLWithID(Context c){
+        SharedPreferences sp = c.getSharedPreferences(c.getString(R.string.shared_Pref),c.MODE_PRIVATE);
+        String sUserID = sp.getString(c.getString(R.string.user_id),"");
+
+        return gSurveyURL + sUserID;
     }
 
 

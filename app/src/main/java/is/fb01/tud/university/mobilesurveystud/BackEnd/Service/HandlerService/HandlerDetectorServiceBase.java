@@ -48,6 +48,7 @@ public abstract class HandlerDetectorServiceBase extends DetectorServiceBase {
             public void run() {
                 if(conditionToCheck()) {
 
+                    Log.v(getTag(),"i am still true");
                     mMillsEnd = System.currentTimeMillis();
 
                     if(!isActive) {
@@ -67,6 +68,6 @@ public abstract class HandlerDetectorServiceBase extends DetectorServiceBase {
                 mCheckConditionHandler.postDelayed(this, getHandlerDelay());
             }
         };
-        mCheckConditionHandler.postDelayed(runner, getHandlerDelay());
+        mCheckConditionHandler.postDelayed(runner, 1000); //first check after 1 sec
     }
 }
