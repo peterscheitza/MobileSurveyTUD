@@ -9,7 +9,7 @@ import android.content.SharedPreferences;
 public class GlobalSettings {
 
     final public static int gEventWait   = 30*1000; // 30 Seconds
-    final public static int gMinUseDuration    = 30*1000; //
+    final public static int gMinUseDuration    = 15*1000; //
 
     final public static int gResetShowCounter = 5*60*1000; //time in mills
     final public static int gMaxShowCounter = 999;

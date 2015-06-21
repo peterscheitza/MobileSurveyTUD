@@ -3,10 +3,13 @@ package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 import android.app.Activity;
 import android.app.ActivityManager;
 import android.app.AlarmManager;
+import android.app.AlertDialog;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -30,17 +33,21 @@ public class MainActivity extends Activity {
 
     static final String TAG = "MainActivity";
 
-    SharedPreferences mSharedPref;
-    Intent mMainService;
+    private Context mContext;
 
-    AlarmManager mAlarmManager;
-    PendingIntent mAlarmIntent;
+    private SharedPreferences mSharedPref;
+    private Intent mMainService;
+
+    private AlarmManager mAlarmManager;
+    private PendingIntent mAlarmIntent;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        mContext = this;
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         MainService.State useMainService = readEnum(R.string.setting_is_additional);
@@ -131,50 +138,16 @@ public class MainActivity extends Activity {
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);*/
 
-        Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
-        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
-        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
-
-        if(isServiceRunning(MainService.class))
-            toggleMainButton.setText("Stop Service");
-        else
-            toggleMainButton.setText("Start Service");
-
-        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
-        if(useGyro == MainService.State.ON)
-            toggleGyroButton.setText("Do not use gyro service");
-        else
-            toggleGyroButton.setText("Use gyro service");
-
-
-        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
-        if(useAdditional == MainService.State.ON)
-            toggleAdditionalButton.setText("Do not use additional service");
-        else
-            toggleAdditionalButton.setText("Use additional services");
-
-
-        String sId = mSharedPref.getString(getString(R.string.user_id), "");
-        EditText edittext = (EditText) findViewById(R.id.editText);
-        edittext.setText(sId);
+        updateFrontEndText();
     }
 
     public void buttonToggleService(View v){
 
-        SharedPreferences.Editor editor = mSharedPref.edit();
-
         if(isServiceRunning(MainService.class)){
-            ((Button)v).setText("Start Service");
-            Toast.makeText(this, "Stop Service", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
-            editor.commit();
-
-            stopService(mMainService);
+            showStopDialog();
         }
         else{
             startService(mMainService);
-            ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
 
             //cancel any restart demands - paranoia
@@ -184,10 +157,10 @@ public class MainActivity extends Activity {
                 Log.e(TAG, "AlarmManager update was not canceled. " + e.toString());
             }
 
+            updateFrontEndText();
+
             //editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString()); happens in service
         }
-
-        //editor.commit();
     }
 
     public void buttonToggleGyro(View v){
@@ -196,19 +169,16 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = mSharedPref.edit();
 
         if(useGyro == MainService.State.OFF){
-            ((Button)v).setText("Do not use gyro service");
             Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
         }
         else if (useGyro == MainService.State.ON) {
-            ((Button)v).setText("Use gyro service");
             Toast.makeText(this, "Removed gyro service", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
         }
         else {
-            ((Button)v).setText("Do not use gyro service");
             Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
@@ -216,6 +186,8 @@ public class MainActivity extends Activity {
             Log.v(TAG, "wrong service state");
             assert false;
         }
+
+        updateFrontEndText();
 
         if(isServiceRunning(MainService.class)){
             stopService(mMainService);
@@ -231,19 +203,16 @@ public class MainActivity extends Activity {
         SharedPreferences.Editor editor = mSharedPref.edit();
 
         if(useAdditional == MainService.State.OFF){
-            ((Button)v).setText("Do not use additional service");
             Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
         }
         else if (useAdditional == MainService.State.ON) {
-            ((Button)v).setText("Use additional services");
             Toast.makeText(this, "Removed additional services", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_additional), MainService.State.OFF.toString());
         }
         else {
-            ((Button)v).setText("Do not use additional service");
             Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
 
             editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
@@ -251,6 +220,8 @@ public class MainActivity extends Activity {
             Log.v(TAG, "wrong service state");
             assert false;
         }
+
+        updateFrontEndText();
 
         if(isServiceRunning(MainService.class)){
             stopService(mMainService);
@@ -301,6 +272,8 @@ public class MainActivity extends Activity {
             Log.v(TAG, "going idle on user demand for: " + lIdleTime);
 
             Toast.makeText(this, "Pausiere Umfrage für " + lChoosenNumb + " Stunden", Toast.LENGTH_SHORT).show();
+
+            updateFrontEndText();
         }
         else {
             Toast.makeText(this, "Umfrage ist bereits pausiert", Toast.LENGTH_SHORT).show();
@@ -308,7 +281,70 @@ public class MainActivity extends Activity {
 
     }
 
+    private void updateFrontEndText(){
+        Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
+        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
+        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
 
+        if(isServiceRunning(MainService.class))
+            toggleMainButton.setText("Stop Service");
+        else
+            toggleMainButton.setText("Start Service");
+
+        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+        if(useGyro == MainService.State.ON)
+            toggleGyroButton.setText("Do not use gyro service");
+        else
+            toggleGyroButton.setText("Use gyro service");
+
+
+        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
+        if(useAdditional == MainService.State.ON)
+            toggleAdditionalButton.setText("Do not use additional service");
+        else
+            toggleAdditionalButton.setText("Use additional services");
+
+        String sId = mSharedPref.getString(getString(R.string.user_id), "");
+        EditText edittext = (EditText) findViewById(R.id.editText);
+        edittext.setText(sId);
+    }
+
+    private void showStopDialog(){
+        AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
+
+        dialogBuilder.setTitle("Umfrage-App dauerhaft stoppen");
+        dialogBuilder.setMessage("Sind Sie sicher, dass sie die Umfrageerinnerungen dauerhaft abstellen wollen? Sie müssen die Errinerungen wieder manuel anschalten");
+
+        dialogBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(mContext, "Stop Service", Toast.LENGTH_SHORT).show();
+
+                        SharedPreferences.Editor editor = mSharedPref.edit();
+                        editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+                        editor.commit();
+
+                        stopService(mMainService);
+
+                        Runnable r = new Runnable() {
+                            @Override
+                            public void run() {
+                                updateFrontEndText();
+                            }};
+
+                        Handler mHandler = new Handler();
+                        mHandler.postDelayed(r, 2000); //wait for slow devices until main is stopped - paranoia - looks better
+                    }
+                });
+
+        dialogBuilder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        // do nothing
+                    }
+                });
+
+        dialogBuilder.setIcon(android.R.drawable.ic_dialog_alert);
+        dialogBuilder.show();
+    }
 
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
