@@ -208,10 +208,8 @@ public class MainService extends Service {
         State isMainState = State.valueOf(sIsMainState);
         if(isMainState == State.ON) {
             Log.v(TAG, "not allowed to close, restart soon");
-            Intent intent = new Intent(this, MainService.class);
-            PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
-            AlarmManager alarm = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-            alarm.set(AlarmManager.RTC_WAKEUP, GlobalSettings.gTryToRestartMain, pintent);
+
+            goIdle(GlobalSettings.gTryToRestartMain);
         }
         else if(isMainState == State.OFF) {
             stopForeground(false);
@@ -375,9 +373,10 @@ public class MainService extends Service {
     private boolean isShowADialog() {
         long activityDuration = mMillsEnd - mMillsStart;
 
-        Log.v(TAG, "activityDuration: " + activityDuration);
-
         if(isInactivity()) {
+
+            Log.v(TAG, "!! INACTIVITY !! : activityDuration: " + activityDuration);
+
             if (activityDuration > GlobalSettings.gMinUseDuration) {
                 if(randomFunction()) {
                     if(checkShownCounter()) {
@@ -598,7 +597,6 @@ public class MainService extends Service {
 
 
     private void goIdle(long lIdleTime){
-
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
         editor.commit();
@@ -606,7 +604,14 @@ public class MainService extends Service {
         Intent intent = new Intent(this, MainService.class);
         PendingIntent pintent = PendingIntent.getService(this, 0, intent, 0);
         AlarmManager alarm = (AlarmManager)getSystemService(Context.ALARM_SERVICE);
-        alarm.set(AlarmManager.RTC_WAKEUP, lIdleTime, pintent);
+
+        try {
+            alarm.cancel(pintent); //clear for safety reasons
+        } catch (Exception e) {
+            Log.e(TAG, "AlarmManager update was not canceled. " + e.toString());
+        }
+
+        alarm.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + lIdleTime, pintent);
 
         stopSelf();
 

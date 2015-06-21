@@ -1,6 +1,9 @@
 package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
+import android.app.Activity;
 import android.app.ActivityManager;
+import android.app.AlarmManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -12,6 +15,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.NumberPicker;
 import android.widget.Toast;
 
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
@@ -20,7 +24,7 @@ import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.GyroscopeService;
 
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 
     public static final String PACKAGE_NAME = "is.fb01.tud.university.mobilesurveystud";
 
@@ -29,6 +33,9 @@ public class MainActivity extends ActionBarActivity {
     SharedPreferences mSharedPref;
     Intent mMainService;
 
+    AlarmManager mAlarmManager;
+    PendingIntent mAlarmIntent;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,12 +43,63 @@ public class MainActivity extends ActionBarActivity {
         setContentView(R.layout.activity_main);
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
+        MainService.State useMainService = readEnum(R.string.setting_is_additional);
+        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
+        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+
+        //set default value on first init
+        if(useMainService == MainService.State.UNDEFINED) {
+            editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+            useMainService = MainService.State.ON;
+        }
+
+        if(useAdditional == MainService.State.UNDEFINED)
+            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
+
+        if(useGyro == MainService.State.UNDEFINED)
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
+
+        editor.commit();
+
+
 
         mMainService = new Intent(this, MainService.class);
+
+        if(!isServiceRunning(MainService.class) && useMainService == MainService.State.ON )
+            startService(mMainService);
+
+        Intent intent = new Intent(this, MainService.class);
+        mAlarmIntent = PendingIntent.getService(this, 0, intent, 0);
+        mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+
+
+
+        //Front End
+        NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker1);
+        String[] nums = new String[8];
+        for(int i=0; i<nums.length; i++)
+            nums[i] = Integer.toString(i+1);
+
+        np.setMinValue(1);
+        np.setMaxValue(8);
+        np.setWrapSelectorWheel(true);
+        np.setDisplayedValues(nums);
+        np.setValue(1);
+
+        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
+        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
+
+        toggleGyroButton.setVisibility(View.INVISIBLE);
+        toggleAdditionalButton.setVisibility(View.INVISIBLE);
+
+        toggleGyroButton.setClickable(false);
+        toggleAdditionalButton.setClickable(false);
     }
 
 
-    @Override
+  /*  @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
@@ -62,7 +120,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
-    }
+    }*/
 
     @Override
     public void onResume(){
@@ -101,13 +159,11 @@ public class MainActivity extends ActionBarActivity {
         edittext.setText(sId);
 
         GlobalSettings.gUserId = sId;
-
     }
 
     public void buttonToggleService(View v){
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPref.edit();
+        SharedPreferences.Editor editor = mSharedPref.edit();
 
         if(isServiceRunning(MainService.class)){
             ((Button)v).setText("Start Service");
@@ -122,6 +178,13 @@ public class MainActivity extends ActionBarActivity {
             startService(mMainService);
             ((Button)v).setText("Stop Service");
             Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
+
+            //cancel any restart demands - paranoia
+            try {
+                mAlarmManager.cancel(mAlarmIntent); //clear for safety reasons
+            } catch (Exception e) {
+                Log.e(TAG, "AlarmManager update was not canceled. " + e.toString());
+            }
 
             //editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString()); happens in service
         }
@@ -213,6 +276,39 @@ public class MainActivity extends ActionBarActivity {
 
             Toast.makeText(this, "Saved ID: " + sId , Toast.LENGTH_SHORT).show();
         }
+    }
+
+    public void buttonGoIdle(View v) {
+
+        if(isServiceRunning(MainService.class)) {
+
+            NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker1);
+            long lChoosenNumb = np.getValue();
+            long lIdleTime = lChoosenNumb * 1000 * 60 ;//* 60;
+
+            SharedPreferences.Editor editor = mSharedPref.edit();
+            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+            editor.commit();
+
+
+            try {
+                mAlarmManager.cancel(mAlarmIntent); //clear for safety reasons
+            } catch (Exception e) {
+                Log.e(TAG, "AlarmManager update was not canceled. " + e.toString());
+            }
+
+            mAlarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + lIdleTime, mAlarmIntent);
+
+            stopService(mMainService);
+
+            Log.v(TAG, "going idle on user demand for: " + lIdleTime);
+
+            Toast.makeText(this, "Pausiere Umfrage für " + lChoosenNumb + " Stunden", Toast.LENGTH_SHORT).show();
+        }
+        else {
+            Toast.makeText(this, "Umfrage ist bereits pausiert", Toast.LENGTH_SHORT).show();
+        }
+
     }
 
 

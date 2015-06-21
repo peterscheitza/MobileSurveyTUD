@@ -81,20 +81,21 @@ public class DialogActivity extends ActionBarActivity {
             }
         });
 
-        WebView activityWebView = (WebView) findViewById(R.id.activityWebView);
+        if(GlobalSettings.gIsShowWebView) {
+            WebView activityWebView = (WebView) findViewById(R.id.activityWebView);
 
-        if(isOnline()) {
-            activityWebView.getSettings().setJavaScriptEnabled(true);
-            activityWebView.setWebViewClient(new WebViewClient() {
-                public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
-                    Log.v(TAG, "Oh no! " + description);
-                }
-            });
+            if (isOnline()) {
+                activityWebView.getSettings().setJavaScriptEnabled(true);
+                activityWebView.setWebViewClient(new WebViewClient() {
+                    public void onReceivedError(WebView view, int errorCode, String description, String failingUrl) {
+                        Log.v(TAG, "Oh no! " + description);
+                    }
+                });
 
-            activityWebView.loadUrl(GlobalSettings.gGetURLWithID());
-        }
-        else {
-            activityWebView.setVisibility(View.GONE);
+                activityWebView.loadUrl(GlobalSettings.gGetURLWithID());
+            } else {
+                activityWebView.setVisibility(View.GONE);
+            }
         }
 
         new Notifier(this).alert();

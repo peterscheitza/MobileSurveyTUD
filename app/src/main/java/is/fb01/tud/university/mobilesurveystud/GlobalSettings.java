@@ -12,8 +12,8 @@ public class GlobalSettings {
     final public static int gMinUseDuration    = 30*1000; //
 
     final public static int gResetShowCounter = 5*60*1000; //time in mills
-    final public static int gMaxShowCounter = 1;
-    final public static int gIdleAfterShow = 30*60*1000;
+    final public static int gMaxShowCounter = 999;
+    final public static int gIdleAfterShow = 1000 * 60; //* 30;
 
     final public static int gPercentageToShow = 100;
 
@@ -59,4 +59,6 @@ public class GlobalSettings {
 
 
     final public static int gTryToRestartMain = 30000;
+
+    final public static boolean gIsShowWebView = false;
 }
