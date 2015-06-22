@@ -24,7 +24,11 @@ import android.widget.ScrollView;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
- * Created by peter_000 on 22.05.2015.
+ * DEPRECATED
+ * We do not need to detect serveral hardware buttons
+ * this class should detect with an overlay the BACK and RECENT button presses (not working)
+ * and
+ * the hardware button presses of the volume buttons (working)
  */
 public class ButtonDetectionService extends EventDetectorServiceBase {
 

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.GpsSatellite;
 import android.location.GpsStatus;
+import android.location.Location;
 import android.location.LocationManager;
 import android.util.Log;
 

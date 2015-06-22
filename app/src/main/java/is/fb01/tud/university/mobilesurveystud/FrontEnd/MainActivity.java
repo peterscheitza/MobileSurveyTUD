@@ -66,7 +66,7 @@ public class MainActivity extends Activity {
             editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
 
         if(useGyro == MainService.State.UNDEFINED)
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
 
         editor.commit();
 

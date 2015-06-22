@@ -9,7 +9,7 @@ import android.content.SharedPreferences;
 public class GlobalSettings {
 
     final public static int gEventWait   = 30*1000; // 30 Seconds
-    final public static int gMinUseDuration    = 15*1000; //
+    final public static int gMinUseDuration    = 15*1000; //15 sec
 
     final public static int gResetShowCounter = 5*60*1000; //time in mills
     final public static int gMaxShowCounter = 999;
@@ -37,9 +37,9 @@ public class GlobalSettings {
     //Additional Settings:
     final public static int gTouchEventWait = gEventWait;
 
-    final public static int gGPSEventWait = gEventWait;
+    final public static int gGPSEventWait = 5000;
 
-    final public static int gSoundEventWait = gEventWait; //could be smaller //buttonDetection
+    final public static int gSoundEventWait = gEventWait; //could be smaller //buttonDetection //deprecated!!!!
 
 
     final public static int gSoundRequestWait = 10000;
@@ -47,11 +47,11 @@ public class GlobalSettings {
     final public static int gPhoneRequestWait = 5000;
 
 
-    final public static int gGyroEventWait = gEventWait;
+    final public static int gGyroEventWait = 30000;
     final public static int gGyroEventDelay = 200000; // microseconds (!) -> 200 milliseconds
     final public static int gGyroThreshold = 10; //need to be adjusted when gGyroEventWait or gGyroEventDelay changes
 
-    final public static int gAccelEventWait = gEventWait;
+    final public static int gAccelEventWait = 30000;
     final public static int gAccelEventDelay = 200000; // microseconds (!) -> 200 milliseconds
     final public static int gAccelThreshold = 200; //need to be adjusted when gAccelEventWait or gAccelEventDelay changes
 
