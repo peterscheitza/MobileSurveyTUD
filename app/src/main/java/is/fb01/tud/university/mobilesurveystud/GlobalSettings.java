@@ -63,4 +63,7 @@ public class GlobalSettings {
     final public static int gTryToRestartMain = 30000;
 
     final public static boolean gIsShowWebView = false;
+
+    final public static int gMinIdleHours = 2;
+    final public static int gMaxIdleHours = 6;
 }

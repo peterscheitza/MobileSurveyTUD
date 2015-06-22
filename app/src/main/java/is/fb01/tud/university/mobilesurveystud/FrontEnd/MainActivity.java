@@ -85,15 +85,16 @@ public class MainActivity extends Activity {
 
         //Front End
         NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker1);
-        String[] nums = new String[8];
+        int arrayRange = GlobalSettings.gMaxIdleHours - GlobalSettings.gMinIdleHours + 1;
+        String[] nums = new String[arrayRange];
         for(int i=0; i<nums.length; i++)
-            nums[i] = Integer.toString(i+1);
+            nums[i] = Integer.toString(GlobalSettings.gMinIdleHours+i);
 
-        np.setMinValue(1);
-        np.setMaxValue(8);
+        np.setMinValue(GlobalSettings.gMinIdleHours);
+        np.setMaxValue(GlobalSettings.gMaxIdleHours);
         np.setWrapSelectorWheel(true);
         np.setDisplayedValues(nums);
-        np.setValue(1);
+        np.setValue(GlobalSettings.gMinIdleHours);
 
         Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
         Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
