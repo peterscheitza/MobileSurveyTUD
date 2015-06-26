@@ -12,7 +12,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
 import android.location.LocationManager;
 import android.os.Handler;
 import android.os.IBinder;
@@ -26,7 +25,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 import android.net.Uri;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -78,7 +76,7 @@ public class MainService extends Service {
 
     boolean mIsExtendedRunning = false;
 
-    State mIsGyroState;
+    State mIsUseGps;
     State mIsUseAdditional;
 
 
@@ -97,9 +95,9 @@ public class MainService extends Service {
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
-        String optionGyro = getString(R.string.setting_is_gyro);
+        String optionGyro = getString(R.string.setting_is_gps);
         String sGyroState = sharedPref.getString(optionGyro, State.UNDEFINED.toString());
-        mIsGyroState = State.valueOf(sGyroState);
+        mIsUseGps = State.valueOf(sGyroState);
 
         String optionAdditional = getString(R.string.setting_is_additional);
         String sAddState = sharedPref.getString(optionAdditional, State.UNDEFINED.toString());
@@ -261,7 +259,7 @@ public class MainService extends Service {
             mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, offAndInactive));
         }
 
-        if(mIsGyroState == State.ON)
+        if(mIsUseGps == State.ON)
             mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {

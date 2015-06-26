@@ -10,11 +10,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Handler;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,7 +21,6 @@ import android.widget.Toast;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.R;
-import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.GyroscopeService;
 
 
 public class MainActivity extends Activity {
@@ -52,21 +48,21 @@ public class MainActivity extends Activity {
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         MainService.State useMainService = readEnum(R.string.setting_is_additional);
         MainService.State useAdditional = readEnum(R.string.setting_is_additional);
-        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+        MainService.State useGyro = readEnum(R.string.setting_is_gps);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
 
         //set default value on first init
         if(useMainService == MainService.State.UNDEFINED) {
-            editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice);
             useMainService = MainService.State.ON;
         }
 
         if(useAdditional == MainService.State.UNDEFINED)
-            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_additional), GlobalSettings.gAdditionalSerrvice);
 
         if(useGyro == MainService.State.UNDEFINED)
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_gps), GlobalSettings.gGPSSerrvice);
 
         editor.commit();
 
@@ -149,7 +145,7 @@ public class MainActivity extends Activity {
         }
         else{
             startService(mMainService);
-            Toast.makeText(this, "Start Service", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Starte Dienst", Toast.LENGTH_SHORT).show();
 
             //cancel any restart demands - paranoia
             try {
@@ -165,24 +161,24 @@ public class MainActivity extends Activity {
     }
 
     public void buttonToggleGyro(View v){
-        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+        MainService.State useGyro = readEnum(R.string.setting_is_gps);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
 
         if(useGyro == MainService.State.OFF){
             Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_gps), MainService.State.ON.toString());
         }
         else if (useGyro == MainService.State.ON) {
             Toast.makeText(this, "Removed gyro service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_gps), MainService.State.OFF.toString());
         }
         else {
             Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
 
-            editor.putString(getString(R.string.setting_is_gyro), MainService.State.ON.toString());
+            editor.putString(getString(R.string.setting_is_gps), MainService.State.ON.toString());
 
             Log.v(TAG, "wrong service state");
             assert false;
@@ -253,7 +249,7 @@ public class MainActivity extends Activity {
 
             NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker1);
             long lChoosenNumb = np.getValue();
-            long lIdleTime = lChoosenNumb * 1000 * 60 ;//* 60;
+            long lIdleTime = lChoosenNumb * 1000 * 60 * 60;
 
             SharedPreferences.Editor editor = mSharedPref.edit();
             editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
@@ -288,11 +284,11 @@ public class MainActivity extends Activity {
         Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
 
         if(isServiceRunning(MainService.class))
-            toggleMainButton.setText("Stop Service");
+            toggleMainButton.setText("Dienst anhalten");
         else
-            toggleMainButton.setText("Start Service");
+            toggleMainButton.setText("Dienst starten");
 
-        MainService.State useGyro = readEnum(R.string.setting_is_gyro);
+        MainService.State useGyro = readEnum(R.string.setting_is_gps);
         if(useGyro == MainService.State.ON)
             toggleGyroButton.setText("Do not use gyro service");
         else
@@ -318,7 +314,7 @@ public class MainActivity extends Activity {
 
         dialogBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(mContext, "Stop Service", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, "Dienst angehalten", Toast.LENGTH_SHORT).show();
 
                         SharedPreferences.Editor editor = mSharedPref.edit();
                         editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
