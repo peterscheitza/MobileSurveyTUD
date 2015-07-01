@@ -75,6 +75,7 @@ public class MainService extends Service {
     HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
     boolean mIsExtendedRunning = false;
+    long mNextShowCounterUpdateDue = -1;
 
     State mIsUseGps;
     State mIsUseAdditional;
@@ -520,18 +521,22 @@ public class MainService extends Service {
         editor.putLong(getString(R.string.lastCounterUpdate), lNextUpdate);
         editor.putInt(getString(R.string.dialogShownCounter), 0);
         editor.commit();
+
+        mNextShowCounterUpdateDue = lNextUpdate;
     }
 
     //besser als alert
     private boolean checkShownCounterUpdate(){
-        long lLastCounterUpdate = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
-        long nextUpdateDue = lLastCounterUpdate + GlobalSettings.gResetShowCounter;
+        if(mNextShowCounterUpdateDue < 0)
+            mNextShowCounterUpdateDue = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
+
+        long nextUpdateDue = mNextShowCounterUpdateDue + GlobalSettings.gResetShowCounter;
         long currentTimeMills = System.currentTimeMillis();
 
         if(currentTimeMills > nextUpdateDue) {
             Log.v(TAG,"reset show counter");
 
-            resetShowCounter(lLastCounterUpdate, currentTimeMills);
+            resetShowCounter(mNextShowCounterUpdateDue, currentTimeMills);
 
             return true;
         }
