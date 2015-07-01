@@ -10,7 +10,6 @@
     <string name="millsStart">millsStart</string>
     <string name="millsEnd">millsEnd</string>
     <string name="sender">sender</string>
-    <string name="serviceStopSelf">serviceStopSelf</string>
     <string name="serviceType">serviceType</string>
 
     <string name="lastCounterUpdate">lastCounterUpdate</string>

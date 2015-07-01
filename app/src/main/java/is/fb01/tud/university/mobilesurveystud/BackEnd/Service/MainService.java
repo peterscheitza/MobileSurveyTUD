@@ -110,7 +110,7 @@ public class MainService extends Service {
         mToastHandler = new Handler();
 
 
-        initServiceMaps();
+        initServiceMap();
 
 
         //Standard Receiver registration
@@ -128,7 +128,7 @@ public class MainService extends Service {
                 assert millsStart != -1;
                 assert millsEnd   != -1;
 
-                if(mMillsStart == -1)
+                if(mMillsStart == -1 || millsStart < mMillsStart)
                     mMillsStart = millsStart;
 
                 if(mMillsEnd < millsEnd)
@@ -154,8 +154,10 @@ public class MainService extends Service {
                     mIsExtendedRunning = true;
                 }
 
-
+//TODO ungleich isActive davor
                 isShowADialog();
+
+                //TODO fünf eigene funktionen
             }
         };
         IntentFilter localFilter = new IntentFilter(DetectorServiceBase.MSG);
@@ -234,7 +236,7 @@ public class MainService extends Service {
 
 
 
-    private void initServiceMaps(){
+    private void initServiceMap(){
 
         Intent touchDetectionService = new Intent(this, TouchDetectionService.class);
         //Intent buttonDetectionService = new Intent(this, ButtonDetectionService.class);
@@ -505,7 +507,20 @@ public class MainService extends Service {
 
 
 
+    private void resetShowCounter(long lLastCounterUpdate, long lCurrentTimeMills) {
+        Log.v(TAG,"reset show counter");
 
+        long lNextUpdate = lLastCounterUpdate;
+
+        do {
+            lNextUpdate += GlobalSettings.gResetShowCounter;
+        } while(lNextUpdate > lCurrentTimeMills);
+
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putLong(getString(R.string.lastCounterUpdate), lNextUpdate);
+        editor.putInt(getString(R.string.dialogShownCounter), 0);
+        editor.commit();
+    }
 
     //besser als alert
     private boolean checkShownCounterUpdate(){
@@ -516,10 +531,8 @@ public class MainService extends Service {
         if(currentTimeMills > nextUpdateDue) {
             Log.v(TAG,"reset show counter");
 
-            SharedPreferences.Editor editor = mSharedPref.edit();
-            editor.putLong(getString(R.string.lastCounterUpdate), currentTimeMills);
-            editor.putInt(getString(R.string.dialogShownCounter), 0);
-            editor.commit();
+            resetShowCounter(lLastCounterUpdate, currentTimeMills);
+
             return true;
         }
         return false;
