@@ -253,6 +253,7 @@ public class MainActivity extends Activity {
 
             SharedPreferences.Editor editor = mSharedPref.edit();
             editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+            editor.putBoolean(getString(R.string.is_paused), true);
             editor.commit();
 
 
@@ -265,6 +266,8 @@ public class MainActivity extends Activity {
             mAlarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + lIdleTime, mAlarmIntent);
 
             stopService(mMainService);
+
+
 
             Log.v(TAG, "going idle on user demand for: " + lIdleTime);
 

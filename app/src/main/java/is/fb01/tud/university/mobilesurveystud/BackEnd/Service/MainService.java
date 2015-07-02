@@ -106,6 +106,7 @@ public class MainService extends Service {
 
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+        editor.putBoolean(getString(R.string.is_paused), false);
         editor.commit();
 
         mToastHandler = new Handler();
@@ -518,7 +519,7 @@ public class MainService extends Service {
         } while(lNextUpdate > lCurrentTimeMills);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
-        editor.putLong(getString(R.string.lastCounterUpdate), lNextUpdate);
+        editor.putLong(getString(R.string.nextCounterUpdate), lNextUpdate);
         editor.putInt(getString(R.string.dialogShownCounter), 0);
         editor.commit();
 
@@ -528,12 +529,11 @@ public class MainService extends Service {
     //besser als alert
     private boolean checkShownCounterUpdate(){
         if(mNextShowCounterUpdateDue < 0)
-            mNextShowCounterUpdateDue = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
+            mNextShowCounterUpdateDue = mSharedPref.getLong(getString(R.string.nextCounterUpdate), 0);
 
-        long nextUpdateDue = mNextShowCounterUpdateDue + GlobalSettings.gResetShowCounter;
         long currentTimeMills = System.currentTimeMillis();
 
-        if(currentTimeMills > nextUpdateDue) {
+        if(currentTimeMills > mNextShowCounterUpdateDue) {
             Log.v(TAG,"reset show counter");
 
             resetShowCounter(mNextShowCounterUpdateDue, currentTimeMills);
@@ -560,7 +560,7 @@ public class MainService extends Service {
         }
         else {
 
-            long lLastCounterUpdate = mSharedPref.getLong(getString(R.string.lastCounterUpdate), 0);
+            long lLastCounterUpdate = mSharedPref.getLong(getString(R.string.nextCounterUpdate), 0);
             if(lLastCounterUpdate == 0) {
                 Log.v(TAG, "unable to read last counter update to set alarm manager");
                 assert true;

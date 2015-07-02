@@ -31,13 +31,19 @@ public class BootCompletedReceiver extends BroadcastReceiver{
         SharedPreferences sharedPref = context.getSharedPreferences(sharedPrefName, Context.MODE_PRIVATE);
         Log.v(TAG, sharedPrefName);
 
-        String optioneName = r.getString(R.string.setting_is_active);
-        String lastSavedState = sharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());
-        Log.v(TAG,optioneName);
-        Log.v(TAG,lastSavedState);
+        String optioneStateName = r.getString(R.string.setting_is_active);
+        String lastSavedState = sharedPref.getString(optioneStateName, MainService.State.UNDEFINED.toString());
+
+        String optionePausedName = r.getString(R.string.is_paused);
+        boolean isPaused = sharedPref.getBoolean(optionePausedName, true);
+
+        Log.v(TAG,optioneStateName);
+        Log.v(TAG,"lastSavedState: " + lastSavedState);
+        Log.v(TAG,"isPaused: " + isPaused);
 
 
-        if(lastSavedState.equals(MainService.State.ON.toString())) {
+
+        if(lastSavedState.equals(MainService.State.ON.toString()) || isPaused) {
             Log.v(TAG, "restart service");
             Intent iMainService = new Intent(context, MainService.class);
             context.startService(iMainService);
