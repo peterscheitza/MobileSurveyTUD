@@ -77,10 +77,6 @@ public class MainService extends Service {
     boolean mIsExtendedRunning = false;
     long mNextShowCounterUpdateDue = -1;
 
-    State mIsUseGps;
-    State mIsUseAdditional;
-
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -96,21 +92,12 @@ public class MainService extends Service {
 
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
-        String optionGyro = getString(R.string.setting_is_gps);
-        String sGyroState = sharedPref.getString(optionGyro, State.UNDEFINED.toString());
-        mIsUseGps = State.valueOf(sGyroState);
-
-        String optionAdditional = getString(R.string.setting_is_additional);
-        String sAddState = sharedPref.getString(optionAdditional, State.UNDEFINED.toString());
-        mIsUseAdditional = State.valueOf(sAddState);
-
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
         editor.putBoolean(getString(R.string.is_paused), false);
         editor.commit();
 
         mToastHandler = new Handler();
-
 
         initServiceMap();
 
@@ -258,13 +245,13 @@ public class MainService extends Service {
         List<ServiceStruct.startSituation> phoneStart = Arrays.asList(ServiceStruct.startSituation.EXTEND, ServiceStruct.startSituation.SCREEN_OFF);
         mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, phoneStart, ServiceStruct.stopSituation.INACTIVITY));
 
-        if(mIsUseAdditional == State.ON) {
-            mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, offAndInactive));
-            mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, offAndInactive));
-        }
 
-        if(mIsUseGps == State.ON)
-            mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
+        mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, offAndInactive));
+        mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, offAndInactive));
+
+
+
+        mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             serviceStruct.isActive = false;

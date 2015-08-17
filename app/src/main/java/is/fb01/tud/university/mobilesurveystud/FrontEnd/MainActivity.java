@@ -46,9 +46,7 @@ public class MainActivity extends Activity {
         mContext = this;
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        MainService.State useMainService = readEnum(R.string.setting_is_additional);
-        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
-        MainService.State useGyro = readEnum(R.string.setting_is_gps);
+        MainService.State useMainService = readEnum(R.string.setting_is_active);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
 
@@ -57,12 +55,6 @@ public class MainActivity extends Activity {
             editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice);
             useMainService = MainService.State.ON;
         }
-
-        if(useAdditional == MainService.State.UNDEFINED)
-            editor.putString(getString(R.string.setting_is_additional), GlobalSettings.gAdditionalSerrvice);
-
-        if(useGyro == MainService.State.UNDEFINED)
-            editor.putString(getString(R.string.setting_is_gps), GlobalSettings.gGPSSerrvice);
 
         editor.commit();
 
@@ -91,15 +83,6 @@ public class MainActivity extends Activity {
         np.setWrapSelectorWheel(true);
         np.setDisplayedValues(nums);
         np.setValue(GlobalSettings.gMinIdleHours);
-
-        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
-        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
-
-        toggleGyroButton.setVisibility(View.INVISIBLE);
-        toggleAdditionalButton.setVisibility(View.INVISIBLE);
-
-        toggleGyroButton.setClickable(false);
-        toggleAdditionalButton.setClickable(false);
     }
 
 
@@ -160,73 +143,6 @@ public class MainActivity extends Activity {
         }
     }
 
-    public void buttonToggleGyro(View v){
-        MainService.State useGyro = readEnum(R.string.setting_is_gps);
-
-        SharedPreferences.Editor editor = mSharedPref.edit();
-
-        if(useGyro == MainService.State.OFF){
-            Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_gps), MainService.State.ON.toString());
-        }
-        else if (useGyro == MainService.State.ON) {
-            Toast.makeText(this, "Removed gyro service", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_gps), MainService.State.OFF.toString());
-        }
-        else {
-            Toast.makeText(this, "Allowed gyro service", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_gps), MainService.State.ON.toString());
-
-            Log.v(TAG, "wrong service state");
-            assert false;
-        }
-
-        updateFrontEndText();
-
-        if(isServiceRunning(MainService.class)){
-            stopService(mMainService);
-            startService(mMainService);
-        }
-
-        editor.commit();
-    }
-
-    public void buttonToggleAdditional(View v){
-        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
-
-        SharedPreferences.Editor editor = mSharedPref.edit();
-
-        if(useAdditional == MainService.State.OFF){
-            Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
-        }
-        else if (useAdditional == MainService.State.ON) {
-            Toast.makeText(this, "Removed additional services", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_additional), MainService.State.OFF.toString());
-        }
-        else {
-            Toast.makeText(this, "Allowed additional services", Toast.LENGTH_SHORT).show();
-
-            editor.putString(getString(R.string.setting_is_additional), MainService.State.ON.toString());
-
-            Log.v(TAG, "wrong service state");
-            assert false;
-        }
-
-        updateFrontEndText();
-
-        if(isServiceRunning(MainService.class)){
-            stopService(mMainService);
-            startService(mMainService);
-        }
-
-        editor.commit();
-    }
 
     public void buttonSaveId(View v){
 
@@ -283,26 +199,11 @@ public class MainActivity extends Activity {
 
     private void updateFrontEndText(){
         Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
-        Button toggleGyroButton = (Button) findViewById(R.id.gyroToggleService);
-        Button toggleAdditionalButton = (Button) findViewById(R.id.additionalToggleService);
 
         if(isServiceRunning(MainService.class))
             toggleMainButton.setText("Dienst anhalten");
         else
             toggleMainButton.setText("Dienst starten");
-
-        MainService.State useGyro = readEnum(R.string.setting_is_gps);
-        if(useGyro == MainService.State.ON)
-            toggleGyroButton.setText("Do not use gyro service");
-        else
-            toggleGyroButton.setText("Use gyro service");
-
-
-        MainService.State useAdditional = readEnum(R.string.setting_is_additional);
-        if(useAdditional == MainService.State.ON)
-            toggleAdditionalButton.setText("Do not use additional service");
-        else
-            toggleAdditionalButton.setText("Use additional services");
 
         String sId = mSharedPref.getString(getString(R.string.user_id), "");
         EditText edittext = (EditText) findViewById(R.id.editText);

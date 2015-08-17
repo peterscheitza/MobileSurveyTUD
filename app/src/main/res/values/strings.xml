@@ -17,8 +17,6 @@
 
     <string name="is_paused">isPaused</string>
     <string name="setting_is_active">SettingIsActive</string>
-    <string name="setting_is_additional">SettingIsAdditional</string>
-    <string name="setting_is_gps">SettingIsGPS</string>
     <string name="user_id">UserID</string>
     <string name="shared_Pref">sharedPref</string>
 

@@ -71,6 +71,4 @@ public class GlobalSettings {
     final public static int gMaxIdleHours = 8;
 
     final public static String gDefaultMainSerrvice = MainService.State.ON.toString();
-    final public static String gAdditionalSerrvice = MainService.State.ON.toString();
-    final public static String gGPSSerrvice = MainService.State.ON.toString();
 }

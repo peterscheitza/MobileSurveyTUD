@@ -27,80 +27,59 @@
         android:text="Pausieren"
         android:id="@+id/button"
         android:layout_toRightOf="@+id/numberPicker1"
-        android:layout_alignBottom="@+id/numberPicker1"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:onClick="buttonGoIdle"
-        android:layout_alignTop="@+id/numberPicker1" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Do not use additional service"
-        android:id="@+id/additionalToggleService"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:onClick="buttonToggleAdditional"
-        android:clickable="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Use gyro service"
-        android:id="@+id/gyroToggleService"
-        android:layout_above="@+id/additionalToggleService"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:onClick="buttonToggleGyro"
-        android:clickable="true" />
+        android:layout_alignTop="@+id/numberPicker1"
+        android:layout_alignBottom="@+id/numberPicker1" />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/editText"
-        android:hint="Nutzer ID"
+        android:hint="Ident."
         android:singleLine="true"
-        android:layout_above="@+id/gyroToggleService"
+        android:layout_alignTop="@+id/button4"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/button"
-        android:layout_alignRight="@+id/gyroToggleService"
-        android:layout_alignEnd="@+id/gyroToggleService" />
+        android:layout_alignRight="@+id/mainToggleService"
+        android:layout_alignEnd="@+id/mainToggleService" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Speichern"
         android:id="@+id/button4"
-        android:layout_alignBottom="@+id/editText"
-        android:layout_toRightOf="@+id/editText"
         android:onClick="buttonSaveId"
         android:singleLine="true"
         android:clickable="true"
+        android:layout_above="@+id/mainToggleService"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:layout_toRightOf="@+id/editText"
+        android:layout_toEndOf="@+id/editText" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop Service"
         android:id="@+id/mainToggleService"
-        android:layout_above="@+id/editText"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:clickable="true"
-        android:onClick="buttonToggleService" />
+        android:onClick="buttonToggleService"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceMedium"
-        android:text="Einstellungen"
+        android:text="Einstellungen \nBitte geben Sie hier die erhaltenen Identifikationsnummer ein und bestätigen Sie diese mit &apos;Speichern&apos;"
         android:id="@+id/textView2"
-        android:layout_above="@+id/mainToggleService"
+        android:layout_above="@+id/button4"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true" />
 
     <ImageView
         android:layout_width="wrap_content"
@@ -130,9 +109,9 @@
         android:layout_below="@+id/textView3"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/gyroToggleService"
-        android:layout_alignEnd="@+id/gyroToggleService"
-        android:layout_above="@+id/textView2" />
+        android:layout_above="@+id/textView2"
+        android:layout_alignRight="@+id/mainToggleService"
+        android:layout_alignEnd="@+id/mainToggleService" />
 
 
     <!--<Button
