@@ -1,18 +1,12 @@
 package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
-import android.app.Activity;
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.Uri;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.webkit.WebView;
@@ -54,7 +48,7 @@ public class DialogActivity extends ActionBarActivity {
         activityGoToButton.setText(GlobalSettings.gDialogGoToButton);
 
         Button activityExistButton = (Button) findViewById(R.id.activityExitButton);
-        activityExistButton.setText(GlobalSettings.gDialogExistButton);
+        activityExistButton.setText(GlobalSettings.gDialogExitButton);
 
         activityGoToButton.setOnClickListener(new View.OnClickListener() {
             @Override

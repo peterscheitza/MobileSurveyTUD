@@ -38,6 +38,7 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
 
         mSensorManager.registerListener(this, mGyroscope, GlobalSettings.gGyroEventDelay );
 
+        //TODO nicht benötit- in base
         mLastUpdate = System.currentTimeMillis();
     }
 
@@ -97,15 +98,15 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
         // in order to get the updated rotation.
         // rotationCurrent = rotationCurrent * deltaRotationMatrix;
 
-        double deltaX = Math.atan2(deltaRotationMatrix[7],deltaRotationMatrix[8]);
-        double deltaY = Math.atan2(- deltaRotationMatrix[6], Math.sqrt(Math.pow(deltaRotationMatrix[7],2) + Math.pow(deltaRotationMatrix[8],2)));
-        double deltaZ = Math.atan2(deltaRotationMatrix[3],deltaRotationMatrix[0]);
+        double eulerX = Math.atan2(deltaRotationMatrix[7],deltaRotationMatrix[8]);
+        double eulerY = Math.atan2(- deltaRotationMatrix[6], Math.sqrt(Math.pow(deltaRotationMatrix[7],2) + Math.pow(deltaRotationMatrix[8],2)));
+        double eulerZ = Math.atan2(deltaRotationMatrix[3],deltaRotationMatrix[0]);
 
-        double normDeltaX = Math.abs(deltaX);
-        double normDeltaY = Math.abs(deltaY * 2);
-        double normDeltaZ = Math.abs(deltaZ);
+        double normEulerX = Math.abs(eulerX);
+        double normEulerY = Math.abs(eulerY * 2);             //!!!!!!!!!!!!!! intevall geändert
+        double normEulerZ = Math.abs(eulerZ);
 
-        mDetectedSensorSum += normDeltaX + normDeltaY + normDeltaZ;// - (Math.PI * 3);
+        mDetectedSensorSum += normEulerX + normEulerY + normEulerZ;// - (Math.PI * 3);
     }
 
     @Override

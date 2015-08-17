@@ -36,7 +36,16 @@ public class GPSDetectionService extends EventDetectorServiceBase implements Gps
         if(GPSEnabled) {
             Log.v(TAG, "init GPS listener");
             mLocationManager.addGpsStatusListener(this);
+        } else {
+            //inactivity
+            stopSelf();
         }
+
+    }
+
+    @Override
+    long getWaitTime() {
+        return GlobalSettings.gGPSEventWait;
     }
 
     @Override
@@ -51,7 +60,7 @@ public class GPSDetectionService extends EventDetectorServiceBase implements Gps
         Log.v(TAG, "onGpsStatusChanged: " + event);
 
         if (event == GpsStatus.GPS_EVENT_SATELLITE_STATUS) {
-            onEvent(GlobalSettings.gGPSEventWait);
+            onEvent();
         }
     }
 }

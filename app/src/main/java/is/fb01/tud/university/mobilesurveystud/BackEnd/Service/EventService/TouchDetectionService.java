@@ -45,7 +45,7 @@ public class TouchDetectionService extends EventDetectorServiceBase implements O
         WindowManager.LayoutParams mParams = new WindowManager.LayoutParams(
                 xPixel,
                 yPixel,
-                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT, //Phone!
+                    WindowManager.LayoutParams.TYPE_SYSTEM_ALERT, //Phone!
                     //geht: TYPE_PHONE, TYPE_SYSTEM_ALERT
                     //geht nicht: TYPE_SYSTEM_OVERLAY
                 WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
@@ -60,6 +60,11 @@ public class TouchDetectionService extends EventDetectorServiceBase implements O
 
         Log.i(TAG, "added View");
 
+    }
+
+    @Override
+    long getWaitTime() {
+        return GlobalSettings.gTouchEventWait;
     }
 
 
@@ -85,7 +90,7 @@ public class TouchDetectionService extends EventDetectorServiceBase implements O
 
         Log.i(TAG, "Action :" + event.getAction() + "\t X :" + event.getRawX() + "\t Y :" + event.getRawY());
 
-        onEvent(GlobalSettings.gTouchEventWait);
+        onEvent();
 
         togglePixelColor();
 

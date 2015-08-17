@@ -40,7 +40,7 @@ public abstract class HandlerDetectorServiceBase extends DetectorServiceBase {
         super.onDestroy();
     }
 
-    abstract int getHandlerDelay();
+    abstract long getHandlerDelay();
     abstract boolean conditionToCheck();
 
     private void runHandler() {

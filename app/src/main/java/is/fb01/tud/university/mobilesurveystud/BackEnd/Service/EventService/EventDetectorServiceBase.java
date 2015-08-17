@@ -35,8 +35,10 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
             }
         };
 
-        mEventHandler.postDelayed(mEventRunnable, GlobalSettings.gEventWait);
+        mEventHandler.postDelayed(mEventRunnable, getWaitTime());
     }
+
+    abstract long getWaitTime();
 
     @Override
     public void onDestroy() {
@@ -45,14 +47,14 @@ public abstract class EventDetectorServiceBase extends DetectorServiceBase {
         super.onDestroy();
     }
 
-    protected void onEvent(long idleTime) {
+    protected void onEvent() {
         if (isActive) {
             mEventHandler.removeCallbacksAndMessages(null);
-            mEventHandler.postDelayed(mEventRunnable, idleTime);
+            mEventHandler.postDelayed(mEventRunnable,  getWaitTime());
             mMillsEnd = System.currentTimeMillis();
         } else {
             Log.v(getTag(), "starting to detect some events");
-            mEventHandler.postDelayed(mEventRunnable, idleTime);
+            mEventHandler.postDelayed(mEventRunnable,  getWaitTime());
             mMillsStart = System.currentTimeMillis();
             mMillsEnd = System.currentTimeMillis();
             isActive = true;

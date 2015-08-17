@@ -90,6 +90,11 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
         getApplicationContext().getContentResolver().registerContentObserver(android.provider.Settings.System.CONTENT_URI, true, mAudioObserver );
     }
 
+    @Override
+    long getWaitTime() {
+        return GlobalSettings.gSoundEventWait;
+    }
+
 
     @Override
     public void onDestroy() {
@@ -224,28 +229,28 @@ public class ButtonDetectionService extends EventDetectorServiceBase {
                 if(previousStreamVolume - currentStreamVolume != 0) {
                     Log.v(TAG, "adjusted stream volume");
                     previousStreamVolume = currentStreamVolume;
-                    onEvent(GlobalSettings.gSoundEventWait);
+                    onEvent();
                     return;
                 }
 
                 if(previousNotificationVolume - currentNotificationVolume != 0) {
                     Log.v(TAG, "adjusted notification volume");
                     previousNotificationVolume = currentNotificationVolume;
-                    onEvent(GlobalSettings.gSoundEventWait);
+                    onEvent();
                     return;
                 }
 
                 if(previousRingVolume - currentRingVolume != 0) {
                     Log.v(TAG, "adjusted ring volume");
                     previousRingVolume = currentRingVolume;
-                    onEvent(GlobalSettings.gSoundEventWait);
+                    onEvent();
                     return;
                 }
 
                 if(previousSystemVolume - currentSystemVolume != 0) {
                     Log.v(TAG, "adjusted system volume");
                     previousSystemVolume = currentSystemVolume;
-                    onEvent(GlobalSettings.gSoundEventWait);
+                    onEvent();
                     return;
                 }
 

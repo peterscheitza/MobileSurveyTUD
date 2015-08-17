@@ -10,26 +10,27 @@ import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
  */
 public class GlobalSettings {
 
-    final public static int gEventWait   = 30*1000; // 30 Seconds
-    final public static int gMinUseDuration    = 15*1000; //15 sec
+    final public static long gMinUseDuration    = 15*1000; //15 sec
 
-    final public static int gResetShowCounter = 5*60*1000; //time in mills
-    final public static int gMaxShowCounter = 10;
-    final public static int gIdleAfterShow = 1000 * 60 * 30;
+    final public static long gResetShowCounter = 24*60*60*1000; //time in mills
+    final public static long gMaxShowCounter = 10;
+    final public static long gIdleAfterShow = 1000 * 60 * 30;
 
-    final public static int gPercentageToShow = 10;
+    final public static int gPercentageToShow = 20; //between 1 and 100
 
     final public static String gDialogHead = "Dialog head: Hello";
     final public static String gDialogBody = "Dialog body: I think you are inactive go and answer the survey";
     final public static String gDialogGoToButton = "Go to survey";
-    final public static String gDialogExistButton = "Not now";
+    final public static String gDialogExitButton = "Not now";
 
     public static String gSurveyURL = "http://www.golem.de/"; //needs to start with "http://" or "https://"
     public static String gGetURLWithID(Context c){
+        // There is no sense in saveing the UID in the MainService due the idle time of Main after the showing
+        // of the survey
         SharedPreferences sp = c.getSharedPreferences(c.getString(R.string.shared_Pref),c.MODE_PRIVATE);
         String sUserID = sp.getString(c.getString(R.string.user_id),"");
 
-        return gSurveyURL + sUserID;
+        return gSurveyURL + sUserID + "/";
     }
 
 
@@ -37,16 +38,16 @@ public class GlobalSettings {
 
 
     //Additional Settings:
-    final public static int gTouchEventWait = gEventWait;
+    final public static long gTouchEventWait =  30*1000;
 
-    final public static int gGPSEventWait = 5000;
+    final public static long gGPSEventWait = 5000;
 
-    final public static int gSoundEventWait = gEventWait; //could be smaller //buttonDetection //deprecated!!!!
+    final public static long gSoundEventWait =  30*1000; //could be smaller //buttonDetection //deprecated!!!!
 
 
-    final public static int gSoundRequestWait = 10000;
+    final public static long gSoundRequestWait = 10000;
 
-    final public static int gPhoneRequestWait = 5000;
+    final public static long gPhoneRequestWait = 5000;
 
 
     final public static int gGyroEventWait = 30000;
@@ -66,8 +67,8 @@ public class GlobalSettings {
 
     final public static boolean gIsShowWebView = false;
 
-    final public static int gMinIdleHours = 2;
-    final public static int gMaxIdleHours = 6;
+    final public static int gMinIdleHours = 1;
+    final public static int gMaxIdleHours = 8;
 
     final public static String gDefaultMainSerrvice = MainService.State.ON.toString();
     final public static String gAdditionalSerrvice = MainService.State.ON.toString();

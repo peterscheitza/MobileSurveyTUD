@@ -84,7 +84,7 @@ public class MainActivity extends Activity {
         int arrayRange = GlobalSettings.gMaxIdleHours - GlobalSettings.gMinIdleHours + 1;
         String[] nums = new String[arrayRange];
         for(int i=0; i<nums.length; i++)
-            nums[i] = Integer.toString(GlobalSettings.gMinIdleHours+i);
+            nums[i] = (Integer.toString(GlobalSettings.gMinIdleHours+i) + " Stunde") ;
 
         np.setMinValue(GlobalSettings.gMinIdleHours);
         np.setMaxValue(GlobalSettings.gMaxIdleHours);

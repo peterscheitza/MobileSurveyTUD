@@ -385,25 +385,25 @@ public class MainService extends Service {
     }
 
     private boolean isShowADialog() {
-        long activityDuration = mMillsEnd - mMillsStart;
-
         if(isInactivity()) {
 
+            long activityDuration = mMillsEnd - mMillsStart;
             Log.v(TAG, "!! INACTIVITY !! : activityDuration: " + activityDuration);
 
             if (activityDuration > GlobalSettings.gMinUseDuration) {
-                if(randomFunction()) {
-                    if(checkShownCounter()) {
+                if (randomFunction()) {
+                    if (checkShownCounter()) {
                         showADialog();
 
                         resetParameter();
                         return true;
-                    }
-                    Log.v(TAG, "dialog was canceled due show counter");
-                }
-                Log.v(TAG, "dialog was canceled due random function");
-            }
-            Log.v(TAG, "dialog was canceled due too short activity");
+                    } else
+                        Log.v(TAG, "dialog was canceled due show counter");
+                } else
+                    Log.v(TAG, "dialog was canceled due random function");
+            } else
+                Log.v(TAG, "dialog was canceled due too short activity");
+
             resetParameter();
         }
         return false;
@@ -411,6 +411,7 @@ public class MainService extends Service {
 
     private void showADialog() {
 
+        //TODO exceptional hoch in isshow und vllt globale einstellung zu an aus schalten
         showToast("Please answer!");
         if (mIsScreenOn) {
             if (!areAppsExceptional(getForegroundApps()))
@@ -454,7 +455,7 @@ public class MainService extends Service {
         dialogGoToButton.setText(GlobalSettings.gDialogGoToButton);
 
         final Button dialogExistButton = (Button) dialog.findViewById(R.id.activityExitButton);
-        dialogExistButton.setText(GlobalSettings.gDialogExistButton);
+        dialogExistButton.setText(GlobalSettings.gDialogExitButton);
 
         WebView activityWebView = (WebView) dialog.findViewById(R.id.activityWebView);
         activityWebView.setVisibility(View.GONE);
@@ -638,6 +639,7 @@ public class MainService extends Service {
     private void goIdle(long lIdleTime){
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+        editor.putBoolean(getString(R.string.is_paused), true);
         editor.commit();
 
         Intent intent = new Intent(this, MainService.class);
