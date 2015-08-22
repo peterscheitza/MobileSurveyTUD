@@ -1,5 +1,6 @@
 package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
@@ -20,7 +21,7 @@ import is.fb01.tud.university.mobilesurveystud.Notifier;
 import is.fb01.tud.university.mobilesurveystud.R;
 
 
-public class DialogActivity extends ActionBarActivity {
+public class DialogActivity extends Activity {
 
     static final public String TAG = "DialogActivity";
     static final public String MSG = "is.fb01.tud.university.mobilesurveystud." + TAG + ".MSG";
