@@ -48,16 +48,15 @@ public class MainActivity extends Activity {
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         MainService.State useMainService = readEnum(R.string.setting_is_active);
 
-        SharedPreferences.Editor editor = mSharedPref.edit();
-
         //set default value on first init
         if(useMainService == MainService.State.UNDEFINED) {
-            editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice);
-            useMainService = MainService.State.ON;
+            SharedPreferences.Editor editor = mSharedPref.edit();
+
+            editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice.toString());
+            useMainService = GlobalSettings.gDefaultMainSerrvice;
+
+            editor.commit();
         }
-
-        editor.commit();
-
 
 
         mMainService = new Intent(this, MainService.class);
@@ -76,7 +75,7 @@ public class MainActivity extends Activity {
         int arrayRange = GlobalSettings.gMaxIdleHours - GlobalSettings.gMinIdleHours + 1;
         String[] nums = new String[arrayRange];
         for(int i=0; i<nums.length; i++)
-            nums[i] = (Integer.toString(GlobalSettings.gMinIdleHours+i) + " Stunde") ;
+            nums[i] = (Integer.toString(GlobalSettings.gMinIdleHours+i) + " " + getString(R.string.settings_hours)) ;
 
         np.setMinValue(GlobalSettings.gMinIdleHours);
         np.setMaxValue(GlobalSettings.gMaxIdleHours);
@@ -128,7 +127,7 @@ public class MainActivity extends Activity {
         }
         else{
             startService(mMainService);
-            Toast.makeText(this, "Starte Dienst", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_toast_start), Toast.LENGTH_SHORT).show();
 
             //cancel any restart demands - paranoia
             try {
@@ -155,7 +154,7 @@ public class MainActivity extends Activity {
             editor.putString(getString(R.string.user_id), sId);
             editor.commit();
 
-            Toast.makeText(this, "Saved ID: " + sId , Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_toast_save) + sId , Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -187,7 +186,7 @@ public class MainActivity extends Activity {
 
             Log.v(TAG, "going idle on user demand for: " + lIdleTime);
 
-            Toast.makeText(this, "Pausiere Umfrage für " + lChoosenNumb + " Stunden", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "" + getString(R.string.settings_toast_paused) + lChoosenNumb + " " + getString(R.string.settings_hours), Toast.LENGTH_SHORT).show();
 
             updateFrontEndText();
         }
@@ -201,9 +200,9 @@ public class MainActivity extends Activity {
         Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
 
         if(isServiceRunning(MainService.class))
-            toggleMainButton.setText("Dienst anhalten");
+            toggleMainButton.setText(getString(R.string.settings_stop_button));
         else
-            toggleMainButton.setText("Dienst starten");
+            toggleMainButton.setText(getString(R.string.settings_start_button));
 
         String sId = mSharedPref.getString(getString(R.string.user_id), "");
         EditText edittext = (EditText) findViewById(R.id.editText);
@@ -213,12 +212,12 @@ public class MainActivity extends Activity {
     private void showStopDialog(){
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
 
-        dialogBuilder.setTitle("Umfrage-App dauerhaft stoppen");
-        dialogBuilder.setMessage("Sind Sie sicher, dass sie die Umfrageerinnerungen dauerhaft abstellen wollen? Sie müssen die Errinerungen wieder manuel anschalten");
+        dialogBuilder.setTitle(getString(R.string.settings_stop_dialog_head));
+        dialogBuilder.setMessage(getString(R.string.settings_stop_dialog_body));
 
         dialogBuilder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
-                        Toast.makeText(mContext, "Dienst angehalten", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(mContext, getString(R.string.settings_toast_stop), Toast.LENGTH_SHORT).show();
 
                         SharedPreferences.Editor editor = mSharedPref.edit();
                         editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());

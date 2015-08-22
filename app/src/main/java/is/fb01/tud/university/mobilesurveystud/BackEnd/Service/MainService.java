@@ -13,6 +13,8 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.LocationManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
@@ -110,37 +112,41 @@ public class MainService extends Service {
                 String serviceType = intent.getStringExtra(getString(R.string.serviceType));
                 boolean isActive = intent.getBooleanExtra(getString(R.string.is_active), false);
                 long millsStart = intent.getLongExtra(getString(R.string.millsStart), -1);
-                long millsEnd = intent.getLongExtra(getString(R.string.millsEnd) , -1);
+                long millsEnd = intent.getLongExtra(getString(R.string.millsEnd), -1);
 
-                Log.v(TAG,"onReceiveMessage from Service: " + sender + " isActive: " + isActive );
+                Log.v(TAG, "onReceiveMessage from Service: " + sender + " isActive: " + isActive);
 
                 assert millsStart != -1;
-                assert millsEnd   != -1;
+                assert millsEnd != -1;
 
-                if(mMillsStart == -1 || millsStart < mMillsStart)
+                if (mMillsStart == -1 || millsStart < mMillsStart)
                     mMillsStart = millsStart;
 
-                if(mMillsEnd < millsEnd)
+                if (mMillsEnd < millsEnd)
                     mMillsEnd = millsEnd;
 
-                if(mServiceMap.containsKey(sender)){
+                if (mServiceMap.containsKey(sender)) {
                     ServiceStruct struct = mServiceMap.get(sender);
 
                     struct.isActive = isActive;
-                    if(struct.checkStop(ServiceStruct.stopSituation.INACTIVITY) && !isActive) {
+                    if (struct.checkStop(ServiceStruct.stopSituation.INACTIVITY) && !isActive) {
                         stopService(struct.mIntent);
                         struct.state = State.OFF;
                     }
-                }
-                else {
+                } else {
                     Log.v(TAG, "something went wrong. service not found");
                     assert false;
                 }
 
-
-                if (!mIsExtendedRunning && isStandardInactivity() && mIsScreenOn) {
-                    startServiceEvent(ServiceStruct.startSituation.EXTEND);
-                    mIsExtendedRunning = true;
+                if (!mIsExtendedRunning) {
+                    if (isStandardInactivity()) {
+                        startServiceEvent(ServiceStruct.startSituation.EXTEND);
+                        mIsExtendedRunning = true;
+                    }
+                }
+                else {
+                    if(isExtendedInactivity());
+                    mIsExtendedRunning = false;
                 }
 
 //TODO ungleich isActive davor
@@ -360,6 +366,16 @@ public class MainService extends Service {
         return true;
     }
 
+    private boolean isExtendedInactivity(){
+        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
+            if(serviceStruct.state == State.ON && serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
+                if(serviceStruct.isActive)
+                    return false;
+            }
+        }
+        return true;
+    }
+
 
 
 
@@ -378,18 +394,25 @@ public class MainService extends Service {
             Log.v(TAG, "!! INACTIVITY !! : activityDuration: " + activityDuration);
 
             if (activityDuration > GlobalSettings.gMinUseDuration) {
-                if (randomFunction()) {
-                    if (checkShownCounter()) {
-                        showADialog();
+                if (isConnected()) {
+                    if (randomFunction()) {
+                        if (checkShownCounter()) {
+                            if (!areAppsExceptional(getForegroundApps())) {
+                                showADialog();
 
-                        resetParameter();
-                        return true;
+                                resetParameter();
+                                return true;
+
+                            } else
+                                Log.v(TAG, "app is exceptional!");
+                        } else
+                            Log.v(TAG, "dialog was canceled due show counter");
                     } else
-                        Log.v(TAG, "dialog was canceled due show counter");
+                        Log.v(TAG, "dialog was canceled due random function");
                 } else
-                    Log.v(TAG, "dialog was canceled due random function");
+                    Log.v(TAG, "dialog was canceled - no internet connection");
             } else
-                Log.v(TAG, "dialog was canceled due too short activity");
+            Log.v(TAG, "dialog was canceled due too short activity");
 
             resetParameter();
         }
@@ -401,10 +424,7 @@ public class MainService extends Service {
         //TODO exceptional hoch in isshow und vllt globale einstellung zu an aus schalten
         showToast("Please answer!");
         if (mIsScreenOn) {
-            if (!areAppsExceptional(getForegroundApps()))
-                showSystemAlert();
-            else
-                Log.v(TAG, "app is exceptional!");
+            showSystemAlert();
         } else {
             showActivity();
         }
@@ -433,16 +453,16 @@ public class MainService extends Service {
         dialog.setContentView(R.layout.activity_dialog);
 
         //dialog.setContentView(R.layout.dialog);
-        dialog.setTitle(GlobalSettings.gDialogHead);
+        dialog.setTitle(getString(R.string.dialog_head));
 
         TextView dialogText = (TextView) dialog.findViewById(R.id.activityText);
-        dialogText.setText(GlobalSettings.gDialogBody);
+        dialogText.setText(getString(R.string.dialog_body));
 
         final Button dialogGoToButton = (Button) dialog.findViewById(R.id.activityGoToButton);
-        dialogGoToButton.setText(GlobalSettings.gDialogGoToButton);
+        dialogGoToButton.setText(getString(R.string.dialog_goto_button));
 
         final Button dialogExistButton = (Button) dialog.findViewById(R.id.activityExitButton);
-        dialogExistButton.setText(GlobalSettings.gDialogExitButton);
+        dialogExistButton.setText(getString(R.string.dialog_exit_button));
 
         WebView activityWebView = (WebView) dialog.findViewById(R.id.activityWebView);
         activityWebView.setVisibility(View.GONE);
@@ -619,6 +639,12 @@ public class MainService extends Service {
         return  (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER));
     }
 
+    private boolean isConnected() {
+        ConnectivityManager cm =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = cm.getActiveNetworkInfo();
+        return netInfo != null && netInfo.isConnectedOrConnecting();
+    }
 
 
 

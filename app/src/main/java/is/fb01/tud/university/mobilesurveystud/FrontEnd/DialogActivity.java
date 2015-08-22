@@ -39,16 +39,16 @@ public class DialogActivity extends ActionBarActivity {
         //getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
         //getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
 
-        setTitle(GlobalSettings.gDialogHead);
+        setTitle(getString(R.string.dialog_head));
 
         TextView dialogText = (TextView) findViewById(R.id.activityText);
-        dialogText.setText(GlobalSettings.gDialogBody);
+        dialogText.setText(getString(R.string.dialog_body));
 
         Button activityGoToButton = (Button) findViewById(R.id.activityGoToButton);
-        activityGoToButton.setText(GlobalSettings.gDialogGoToButton);
+        activityGoToButton.setText(getString(R.string.dialog_goto_button));
 
         Button activityExistButton = (Button) findViewById(R.id.activityExitButton);
-        activityExistButton.setText(GlobalSettings.gDialogExitButton);
+        activityExistButton.setText(getString(R.string.dialog_exit_button));
 
         activityGoToButton.setOnClickListener(new View.OnClickListener() {
             @Override
