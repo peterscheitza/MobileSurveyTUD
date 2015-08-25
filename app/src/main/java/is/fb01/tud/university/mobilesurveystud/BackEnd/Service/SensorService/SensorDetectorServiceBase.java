@@ -31,7 +31,7 @@ public abstract class SensorDetectorServiceBase extends DetectorServiceBase {
         super.sendBroadcast(TAG);
     }*/
 
-    protected boolean checkActivity(int iEventWait, int iThreshold){
+    protected boolean checkActivity(long iEventWait, long iThreshold){
         long curTime = System.currentTimeMillis();
         long diffTime = (curTime - mLastUpdate);
 

@@ -32,7 +32,7 @@ public class SoundDetectionService extends HandlerDetectorServiceBase{
 
     @Override
     long getHandlerDelay() {
-        return GlobalSettings.gSoundRequestWait;
+        return GlobalSettings.gSoundEventWait;
     }
 
     @Override

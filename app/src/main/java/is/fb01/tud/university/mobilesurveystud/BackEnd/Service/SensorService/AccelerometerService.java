@@ -37,7 +37,7 @@ public class AccelerometerService extends SensorDetectorServiceBase implements S
         mSensorManager = (SensorManager) getSystemService(this.SENSOR_SERVICE);
         mAcceleromter = mSensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
 
-        mSensorManager.registerListener(this,mAcceleromter,GlobalSettings.gAccelEventDelay);
+        mSensorManager.registerListener(this, mAcceleromter,GlobalSettings.gAccelEventDelay);
     }
 
 

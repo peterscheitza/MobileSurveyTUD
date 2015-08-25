@@ -191,7 +191,7 @@ public class MainActivity extends Activity {
             updateFrontEndText();
         }
         else {
-            Toast.makeText(this, "Umfrage ist bereits pausiert", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_toast_is_paused), Toast.LENGTH_SHORT).show();
         }
 
     }

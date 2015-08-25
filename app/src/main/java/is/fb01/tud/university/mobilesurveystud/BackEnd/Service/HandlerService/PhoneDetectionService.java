@@ -36,7 +36,7 @@ public class PhoneDetectionService extends HandlerDetectorServiceBase {
 
     @Override
     long getHandlerDelay() {
-        return GlobalSettings.gPhoneRequestWait;
+        return GlobalSettings.gPhoneEventWait;
     }
 
     @Override

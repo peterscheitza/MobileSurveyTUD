@@ -43,19 +43,17 @@ public class GlobalSettings {
 
     final public static long gGPSEventWait = 5000;
 
-    final public static long gSoundEventWait =  30*1000; //could be smaller //buttonDetection //deprecated!!!!
+
+    final public static long gSoundEventWait = 10000;
+
+    final public static long gPhoneEventWait = 5000;
 
 
-    final public static long gSoundRequestWait = 10000;
-
-    final public static long gPhoneRequestWait = 5000;
-
-
-    final public static int gGyroEventWait = 30000;
+    final public static long gGyroEventWait = 30000;
     final public static int gGyroEventDelay = 200000; // microseconds (!) -> 200 milliseconds
     final public static int gGyroThreshold = 10; //need to be adjusted when gGyroEventWait or gGyroEventDelay changes
 
-    final public static int gAccelEventWait = 30000;
+    final public static long gAccelEventWait = 30000;
     final public static int gAccelEventDelay = 200000; // microseconds (!) -> 200 milliseconds
     final public static int gAccelThreshold = 200; //need to be adjusted when gAccelEventWait or gAccelEventDelay changes
 
@@ -63,5 +61,5 @@ public class GlobalSettings {
             "com.google.android.apps.maps"
     };
 
-    final public static int gTryToRestartMain = 30000;
+    final public static long gTryToRestartMain = 30000;
 }

@@ -138,16 +138,18 @@ public class MainService extends Service {
                     assert false;
                 }
 
-                if (!mIsExtendedRunning) {
-                    if (isStandardInactivity()) {
+                if (isStandardInactivity()) {
+                    if (!mIsExtendedRunning) {
                         startServiceEvent(ServiceStruct.startSituation.EXTEND);
                         mIsExtendedRunning = true;
                     }
                 }
-                else {
-                    if(isExtendedInactivity());
+
+                boolean isE = isExtendedInactivity();
+                boolean isS = isStandardInactivity();
+                if(isE && !isS)
                     mIsExtendedRunning = false;
-                }
+
 
 //TODO ungleich isActive davor
                 isShowADialog();
