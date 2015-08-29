@@ -35,7 +35,7 @@ public class BootCompletedReceiver extends BroadcastReceiver{
         String lastSavedState = sharedPref.getString(optioneStateName, MainService.State.UNDEFINED.toString());
 
         String optionePausedName = r.getString(R.string.is_paused);
-        boolean isPaused = sharedPref.getBoolean(optionePausedName, true);
+        boolean isPaused = sharedPref.getBoolean(optionePausedName, false);
 
         Log.v(TAG,optioneStateName);
         Log.v(TAG,"lastSavedState: " + lastSavedState);
