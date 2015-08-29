@@ -3,12 +3,11 @@ package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.BitmapFactory;
 import android.os.IBinder;
 import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
-import is.fb01.tud.university.mobilesurveystud.Notifier;
+import is.fb01.tud.university.mobilesurveystud.FrontEnd.Notifier;
 import is.fb01.tud.university.mobilesurveystud.R;
 
 /**

@@ -39,7 +39,7 @@ import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.Ph
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.SoundDetectionService;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
-import is.fb01.tud.university.mobilesurveystud.Notifier;
+import is.fb01.tud.university.mobilesurveystud.FrontEnd.Notifier;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.TouchDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.SensorService.AccelerometerService;

@@ -1,4 +1,4 @@
-package is.fb01.tud.university.mobilesurveystud;
+package is.fb01.tud.university.mobilesurveystud.FrontEnd;
 
 import android.app.Dialog;
 import android.app.Notification;
@@ -19,6 +19,7 @@ import android.widget.Toast;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.MainActivity;
+import is.fb01.tud.university.mobilesurveystud.R;
 
 /**
  * Created by peter_000 on 12.06.2015.
