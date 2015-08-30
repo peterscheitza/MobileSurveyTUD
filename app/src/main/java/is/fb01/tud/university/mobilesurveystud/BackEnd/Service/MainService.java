@@ -28,15 +28,17 @@ import android.widget.Toast;
 import android.net.Uri;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
 
-import is.fb01.tud.university.mobilesurveystud.BackEnd.DatabaseConnector;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Database.DatabaseConnector;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Receiver.DetectorReceiver;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.EventService.GPSDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.PhoneDetectionService;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.HandlerService.SoundDetectionService;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.ServiceHandling.ServiceHandler;
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.ServiceHandling.ServiceStruct;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.DialogActivity;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.FrontEnd.Notifier;
@@ -54,27 +56,19 @@ public class MainService extends Service {
 
     static final String TAG = "MainService";
 
-    static public enum State {
-        ON,OFF,UNDEFINED
-    }
+    public long mMillsStart = -1;
+    public long mMillsEnd = -1;
+    public boolean mIsScreenOn = true;
+    public static ServiceHandler mServiceMap;
 
     private Context mContext;
-
     private SharedPreferences mSharedPref;
-
     private Handler mToastHandler;
 
-    private BroadcastReceiver mLocalBroadcasteReceiver;
-
+    private DetectorReceiver mLocalBroadcasteReceiver;
     private BroadcastReceiver mPowerButtonReceiver;
     private BroadcastReceiver mDialogReceiver;
     private BroadcastReceiver waitForUnlockReceiver;
-
-    private long mMillsStart = -1;
-    private long mMillsEnd = -1;
-    private boolean mIsScreenOn = true;
-
-    HashMap<String,ServiceStruct> mServiceMap = new HashMap<>();
 
     boolean mIsExtendedRunning = false;
     long mNextShowCounterUpdateDue = -1;
@@ -87,7 +81,6 @@ public class MainService extends Service {
         Notification notification  = new Notifier(this).getForgroundNotification();
         startForeground(1,notification);
 
-
         mContext = this;
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
@@ -95,7 +88,7 @@ public class MainService extends Service {
         SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
-        editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
+        editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.ON.toString());
         editor.putBoolean(getString(R.string.is_paused), false);
         editor.commit();
 
@@ -103,9 +96,10 @@ public class MainService extends Service {
 
         initServiceMap();
 
+        mLocalBroadcasteReceiver = new DetectorReceiver(this);
 
         //Standard Receiver registration
-        mLocalBroadcasteReceiver = new BroadcastReceiver() {
+        /*mLocalBroadcasteReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String sender = intent.getStringExtra(getString(R.string.sender));
@@ -116,14 +110,14 @@ public class MainService extends Service {
 
                 Log.v(TAG, "onReceiveMessage from Service: " + sender + " isActive: " + isActive);
 
-                assert millsStart != -1;
-                assert millsEnd != -1;
+                //update
+                if(millsStart > -1)
+                    if (mMillsStart == -1 || millsStart < mMillsStart)
+                        mMillsStart = millsStart;
 
-                if (mMillsStart == -1 || millsStart < mMillsStart)
-                    mMillsStart = millsStart;
-
-                if (mMillsEnd < millsEnd)
-                    mMillsEnd = millsEnd;
+                if(millsEnd > -1)
+                    if (mMillsEnd < millsEnd)
+                        mMillsEnd = millsEnd;
 
                 if (mServiceMap.containsKey(sender)) {
                     ServiceStruct struct = mServiceMap.get(sender);
@@ -151,12 +145,12 @@ public class MainService extends Service {
                     mIsExtendedRunning = false;
 
 
-//TODO ungleich isActive davor
-                isShowADialog();
+                if(!isActive)
+                    isShowADialog();
 
                 //TODO fünf eigene funktionen
             }
-        };
+        };*/
         IntentFilter localFilter = new IntentFilter(DetectorServiceBase.MSG);
         LocalBroadcastManager.getInstance(this).registerReceiver(mLocalBroadcasteReceiver, localFilter);
 
@@ -206,14 +200,14 @@ public class MainService extends Service {
         for (ServiceStruct.stopSituation s : ServiceStruct.stopSituation.values())
             stopServiceEvent(s);
 
-        String sIsMainState = mSharedPref.getString(getString(R.string.setting_is_active),State.UNDEFINED.toString());
-        State isMainState = State.valueOf(sIsMainState);
-        if(isMainState == State.ON) {
+        String sIsMainState = mSharedPref.getString(getString(R.string.setting_is_active), GlobalSettings.State.UNDEFINED.toString());
+        GlobalSettings.State isMainState = GlobalSettings.State.valueOf(sIsMainState);
+        if(isMainState == GlobalSettings.State.ON) {
             Log.v(TAG, "not allowed to close, restart soon");
 
             goIdle(GlobalSettings.gTryToRestartMain);
         }
-        else if(isMainState == State.OFF) {
+        else if(isMainState == GlobalSettings.State.OFF) {
             stopForeground(false);
             Log.v(TAG, "allowed to close,good bye");
         }
@@ -235,65 +229,54 @@ public class MainService extends Service {
 
     private void initServiceMap(){
 
-        Intent touchDetectionService = new Intent(this, TouchDetectionService.class);
-        //Intent buttonDetectionService = new Intent(this, ButtonDetectionService.class);
+        mServiceMap = new ServiceHandler(this);
 
-        Intent soundDetectionService = new Intent(this, SoundDetectionService.class);
-        Intent gpsDetectionService = new Intent(this, GPSDetectionService.class);
-        Intent gyroService = new Intent(this, GyroscopeService.class);
-        Intent acceleromterService = new Intent(this, AccelerometerService.class);
-        Intent phoneService = new Intent(this, PhoneDetectionService.class);
 
         List<ServiceStruct.stopSituation> offAndInactive = Arrays.asList(ServiceStruct.stopSituation.SCREEN_OFF, ServiceStruct.stopSituation.INACTIVITY);
-
-        mServiceMap.put(TouchDetectionService.TAG, new ServiceStruct(touchDetectionService, ServiceStruct.startSituation.SCREEN_ON, ServiceStruct.stopSituation.SCREEN_OFF));
-
-        mServiceMap.put(SoundDetectionService.TAG, new ServiceStruct(soundDetectionService, ServiceStruct.startSituation.EXTEND, offAndInactive));
-
         List<ServiceStruct.startSituation> phoneStart = Arrays.asList(ServiceStruct.startSituation.EXTEND, ServiceStruct.startSituation.SCREEN_OFF);
-        mServiceMap.put(PhoneDetectionService.TAG, new ServiceStruct(phoneService, phoneStart, ServiceStruct.stopSituation.INACTIVITY));
 
-
-        mServiceMap.put(GyroscopeService.TAG, new ServiceStruct(gyroService, ServiceStruct.startSituation.EXTEND, offAndInactive));
-        mServiceMap.put(AccelerometerService.TAG, new ServiceStruct(acceleromterService, ServiceStruct.startSituation.EXTEND, offAndInactive));
-
-
-
-        mServiceMap.put(GPSDetectionService.TAG, new ServiceStruct(gpsDetectionService, ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY));
+        mServiceMap.put(new TouchDetectionService(),  ServiceStruct.startSituation.SCREEN_ON, ServiceStruct.stopSituation.SCREEN_OFF);
+        mServiceMap.put(new SoundDetectionService(),  ServiceStruct.startSituation.EXTEND, offAndInactive);
+        mServiceMap.put(new PhoneDetectionService(), phoneStart, ServiceStruct.stopSituation.INACTIVITY);
+        mServiceMap.put(new GyroscopeService(),  ServiceStruct.startSituation.EXTEND, offAndInactive);
+        mServiceMap.put(new AccelerometerService(), ServiceStruct.startSituation.EXTEND, offAndInactive);
+        mServiceMap.put(new GPSDetectionService(), ServiceStruct.startSituation.EXTEND, ServiceStruct.stopSituation.INACTIVITY);
 
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             serviceStruct.isActive = false;
-            serviceStruct.state = State.OFF;
+            serviceStruct.state = GlobalSettings.State.OFF;
         }
 
         startServiceEvent(ServiceStruct.startSituation.SCREEN_ON);
     }
 
-    private void stopServiceEvent(ServiceStruct.stopSituation stop) {
+    public void stopServiceEvent(ServiceStruct.stopSituation stop) {
 
         Log.v(TAG,"stopServiceEvent: " + stop );
 
         for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.ON && serviceStruct.checkStop(stop)) {
+            if (serviceStruct.state == GlobalSettings.State.ON && serviceStruct.checkStop(stop)) {
                 stopService(serviceStruct.mIntent);
-                serviceStruct.state = State.OFF;
+                serviceStruct.state = GlobalSettings.State.OFF;
                 serviceStruct.isActive = false;
             }
         }
     }
 
-    private void startServiceEvent(ServiceStruct.startSituation start) {
+    public void startServiceEvent(ServiceStruct.startSituation start) {
 
         Log.v(TAG,"startServiceEvent: " + start );
 
         for (ServiceStruct serviceStruct : mServiceMap.values()) {
-            if (serviceStruct.state == State.OFF && serviceStruct.checkStart(start)) {
+            if (serviceStruct.state == GlobalSettings.State.OFF && serviceStruct.checkStart(start)) {
                 startService(serviceStruct.mIntent);
-                serviceStruct.state = State.ON;
+                serviceStruct.state = GlobalSettings.State.ON;
                 serviceStruct.isActive = true; //assume activity
             }
         }
     }
+
+
 
 
 
@@ -350,7 +333,7 @@ public class MainService extends Service {
 
     private boolean isInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON) {
+            if(serviceStruct.state == GlobalSettings.State.ON) {
                 if(serviceStruct.isActive)
                     return false;
             }
@@ -360,7 +343,7 @@ public class MainService extends Service {
 
     private boolean isStandardInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && !serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
+            if(serviceStruct.state == GlobalSettings.State.ON && !serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
                 if(serviceStruct.isActive)
                     return false;
             }
@@ -370,7 +353,7 @@ public class MainService extends Service {
 
     private boolean isExtendedInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == State.ON && serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
+            if(serviceStruct.state == GlobalSettings.State.ON && serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
                 if(serviceStruct.isActive)
                     return false;
             }
@@ -389,7 +372,7 @@ public class MainService extends Service {
         return randomInt <= GlobalSettings.gPercentageToShow;
     }
 
-    private boolean isShowADialog() {
+    public boolean isShowADialog() {
         if(isInactivity()) {
 
             long activityDuration = mMillsEnd - mMillsStart;
@@ -653,7 +636,7 @@ public class MainService extends Service {
 
     private void goIdle(long lIdleTime){
         SharedPreferences.Editor editor = mSharedPref.edit();
-        editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+        editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
         editor.putBoolean(getString(R.string.is_paused), true);
         editor.commit();
 

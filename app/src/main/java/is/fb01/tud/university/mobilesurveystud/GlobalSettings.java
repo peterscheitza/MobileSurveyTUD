@@ -3,8 +3,6 @@ package is.fb01.tud.university.mobilesurveystud;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
-
 /**
  * Created by peter_000 on 11.05.2015.
  */
@@ -33,7 +31,7 @@ public class GlobalSettings {
     final public static int gMinIdleHours = 1;
     final public static int gMaxIdleHours = 8;
 
-    final public static MainService.State gDefaultMainSerrvice = MainService.State.ON;
+    final public static State gDefaultMainSerrvice = State.ON;
 
 
 
@@ -62,4 +60,8 @@ public class GlobalSettings {
     };
 
     final public static long gTryToRestartMain = 30000;
+
+    static public enum State {
+        ON,OFF,UNDEFINED
+    }
 }

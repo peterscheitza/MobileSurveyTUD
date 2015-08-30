@@ -7,6 +7,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
 
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.R;
 import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 
@@ -32,7 +33,7 @@ public class BootCompletedReceiver extends BroadcastReceiver{
         Log.v(TAG, sharedPrefName);
 
         String optioneStateName = r.getString(R.string.setting_is_active);
-        String lastSavedState = sharedPref.getString(optioneStateName, MainService.State.UNDEFINED.toString());
+        String lastSavedState = sharedPref.getString(optioneStateName, GlobalSettings.State.UNDEFINED.toString());
 
         String optionePausedName = r.getString(R.string.is_paused);
         boolean isPaused = sharedPref.getBoolean(optionePausedName, false);
@@ -43,12 +44,12 @@ public class BootCompletedReceiver extends BroadcastReceiver{
 
 
 
-        if(lastSavedState.equals(MainService.State.ON.toString()) || isPaused) {
+        if(lastSavedState.equals(GlobalSettings.State.ON.toString()) || isPaused) {
             Log.v(TAG, "restart service");
             Intent iMainService = new Intent(context, MainService.class);
             context.startService(iMainService);
         }
-        else if(lastSavedState.equals(MainService.State.OFF.toString())) {
+        else if(lastSavedState.equals(GlobalSettings.State.OFF.toString())) {
             //do nothing
             Log.v(TAG, "service was off, we keep it off");
         }

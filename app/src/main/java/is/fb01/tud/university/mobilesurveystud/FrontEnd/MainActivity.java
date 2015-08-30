@@ -46,10 +46,10 @@ public class MainActivity extends Activity {
         mContext = this;
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-        MainService.State useMainService = readEnum(R.string.setting_is_active);
+        GlobalSettings.State useMainService = readEnum(R.string.setting_is_active);
 
         //set default value on first init
-        if(useMainService == MainService.State.UNDEFINED) {
+        if(useMainService == GlobalSettings.State.UNDEFINED) {
             SharedPreferences.Editor editor = mSharedPref.edit();
 
             editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice.toString());
@@ -61,7 +61,7 @@ public class MainActivity extends Activity {
 
         mMainService = new Intent(this, MainService.class);
 
-        if(!isServiceRunning(MainService.class) && useMainService == MainService.State.ON )
+        if(!isServiceRunning(MainService.class) && useMainService == GlobalSettings.State.ON )
             startService(mMainService);
 
         Intent intent = new Intent(this, MainService.class);
@@ -167,7 +167,7 @@ public class MainActivity extends Activity {
             long lIdleTime = lChoosenNumb * 1000 * 60 * 60;
 
             SharedPreferences.Editor editor = mSharedPref.edit();
-            editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+            editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
             editor.putBoolean(getString(R.string.is_paused), true);
             editor.commit();
 
@@ -186,7 +186,7 @@ public class MainActivity extends Activity {
 
             Log.v(TAG, "going idle on user demand for: " + lIdleTime);
 
-            Toast.makeText(this, "" + getString(R.string.settings_toast_paused) + lChoosenNumb + " " + getString(R.string.settings_hours), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "" + getString(R.string.settings_toast_paused) + " " + lChoosenNumb + " " + getString(R.string.settings_hours), Toast.LENGTH_SHORT).show();
 
             updateFrontEndText();
         }
@@ -220,7 +220,7 @@ public class MainActivity extends Activity {
                         Toast.makeText(mContext, getString(R.string.settings_toast_stop), Toast.LENGTH_SHORT).show();
 
                         SharedPreferences.Editor editor = mSharedPref.edit();
-                        editor.putString(getString(R.string.setting_is_active), MainService.State.OFF.toString());
+                        editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
                         editor.commit();
 
                         stopService(mMainService);
@@ -256,9 +256,9 @@ public class MainActivity extends Activity {
         return false;
     }
 
-    private MainService.State readEnum(int iName){
+    private GlobalSettings.State readEnum(int iName){
         String optioneName = getString(iName);
-        String sEnum = mSharedPref.getString(optioneName, MainService.State.UNDEFINED.toString());
-        return MainService.State.valueOf(sEnum);
+        String sEnum = mSharedPref.getString(optioneName, GlobalSettings.State.UNDEFINED.toString());
+        return GlobalSettings.State.valueOf(sEnum);
     }
 }

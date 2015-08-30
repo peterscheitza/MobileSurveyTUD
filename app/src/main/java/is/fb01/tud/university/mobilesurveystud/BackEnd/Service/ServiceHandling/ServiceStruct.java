@@ -1,10 +1,12 @@
-package is.fb01.tud.university.mobilesurveystud.BackEnd.Service;
+package is.fb01.tud.university.mobilesurveystud.BackEnd.Service.ServiceHandling;
 
 import android.content.Intent;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
+
+import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.DetectorServiceBase;
+import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * Created by peter_000 on 04.06.2015.
@@ -19,7 +21,7 @@ public class ServiceStruct {
         NEVER, SCREEN_OFF, INACTIVITY
     }
 
-    ServiceStruct(Intent intent, startSituation start, stopSituation stop){
+    public ServiceStruct(Intent intent, startSituation start, stopSituation stop){
         initCollection();
 
         mIntent = intent;
@@ -27,7 +29,7 @@ public class ServiceStruct {
         mStopList.add(stop);
     }
 
-    ServiceStruct(Intent intent, List<startSituation> start, stopSituation stop){
+    public ServiceStruct(Intent intent, List<startSituation> start, stopSituation stop){
         initCollection();
 
         mIntent = intent;
@@ -35,7 +37,7 @@ public class ServiceStruct {
         mStopList.add(stop);
     }
 
-    ServiceStruct(Intent intent, startSituation start,  List<stopSituation> stop){
+    public ServiceStruct(Intent intent, startSituation start,  List<stopSituation> stop){
         initCollection();
 
         mIntent = intent;
@@ -43,7 +45,7 @@ public class ServiceStruct {
         mStopList = stop;
     }
 
-    ServiceStruct(Intent intent,  List<startSituation> start,  List<stopSituation> stop){
+    public ServiceStruct(Intent intent,  List<startSituation> start,  List<stopSituation> stop){
         initCollection();
 
         mIntent = intent;
@@ -54,9 +56,10 @@ public class ServiceStruct {
     public Intent mIntent;
     List<startSituation> mStartList;
     List<stopSituation> mStopList;
+    DetectorServiceBase mDetector;
 
     //public MainService.ServiceType type;
-    public MainService.State state = MainService.State.UNDEFINED;
+    public GlobalSettings.State state = GlobalSettings.State.UNDEFINED;
     public boolean isActive = false;
 
     private void initCollection(){

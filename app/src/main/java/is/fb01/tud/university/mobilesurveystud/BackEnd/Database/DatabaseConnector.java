@@ -1,4 +1,4 @@
-package is.fb01.tud.university.mobilesurveystud.BackEnd;
+package is.fb01.tud.university.mobilesurveystud.BackEnd.Database;
 
 import android.content.ContentValues;
 import android.content.Context;
