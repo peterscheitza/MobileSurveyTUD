@@ -68,7 +68,7 @@ public class MainService extends Service {
     private DetectorReceiver mLocalBroadcasteReceiver;
     private BroadcastReceiver mPowerButtonReceiver;
     private BroadcastReceiver mDialogReceiver;
-    private BroadcastReceiver waitForUnlockReceiver;
+    private BroadcastReceiver mWaitForUnlockReceiver;
 
     boolean mIsExtendedRunning = false;
     long mNextShowCounterUpdateDue = -1;
@@ -162,8 +162,29 @@ public class MainService extends Service {
                 handleShowSurveyFromLockScreen(intent);
             }
         };
-        IntentFilter filterDialogActivity = new IntentFilter(DialogActivity.MSG);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mDialogReceiver, filterDialogActivity);
+
+        mWaitForUnlockReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                Log.v(TAG,"onReceiveMessage from user present");
+
+                Intent i = new Intent(Intent.ACTION_VIEW);
+                i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
+                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                i.setPackage("com.android.chrome");
+                try {
+                    startActivity(i);
+                } catch (ActivityNotFoundException ex) {
+                    // Chrome browser presumably not installed so allow user to choose instead
+                    i.setPackage(null);
+                    startActivity(i);
+                }
+
+                unregisterReceiver(mWaitForUnlockReceiver);
+
+                goIdle(GlobalSettings.gIdleAfterShow);
+            }
+        };
 
 
         mPowerButtonReceiver = new BroadcastReceiver() {
@@ -192,9 +213,16 @@ public class MainService extends Service {
         Log.v(TAG,"onServiceClose");
 
         //LocalBroadcastManager.getInstance(this)....
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mLocalBroadcasteReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
-        unregisterReceiver(this.mPowerButtonReceiver);
+        //paranoia: all receiver
+        try{ LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mLocalBroadcasteReceiver);}
+        catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
+        try{LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);}
+        catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
+        try{unregisterReceiver(this.mWaitForUnlockReceiver);}
+        catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
+        try{ unregisterReceiver(this.mPowerButtonReceiver);}
+        catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
+
 
         //stop all services
         for (ServiceStruct.stopSituation s : ServiceStruct.stopSituation.values())
@@ -298,32 +326,12 @@ public class MainService extends Service {
     }
 
     private void handleShowSurveyFromLockScreen(Intent intent) {
-         waitForUnlockReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                Log.v(TAG,"onReceiveMessage from user present");
 
-                Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.setPackage("com.android.chrome");
-                try {
-                    startActivity(i);
-                } catch (ActivityNotFoundException ex) {
-                    // Chrome browser presumably not installed so allow user to choose instead
-                    i.setPackage(null);
-                    startActivity(i);
-                }
-
-                unregisterReceiver(waitForUnlockReceiver);
-
-                goIdle(GlobalSettings.gIdleAfterShow);
-            }
-        };
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
         IntentFilter filterUserPresent = new IntentFilter();
         filterUserPresent.addAction(Intent.ACTION_USER_PRESENT);
-        registerReceiver(waitForUnlockReceiver,filterUserPresent);
+        registerReceiver(mWaitForUnlockReceiver,filterUserPresent);
     }
 
 
@@ -406,7 +414,6 @@ public class MainService extends Service {
 
     private void showADialog() {
 
-        //TODO exceptional hoch in isshow und vllt globale einstellung zu an aus schalten
         showToast("Please answer!");
         if (mIsScreenOn) {
             showSystemAlert();
@@ -424,6 +431,9 @@ public class MainService extends Service {
 
     private void showActivity() {
         Log.v(TAG, "show dialog activity");
+
+        IntentFilter filterDialogActivity = new IntentFilter(DialogActivity.MSG);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mDialogReceiver, filterDialogActivity);
 
         Intent i = new Intent(this, DialogActivity.class);
         i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
