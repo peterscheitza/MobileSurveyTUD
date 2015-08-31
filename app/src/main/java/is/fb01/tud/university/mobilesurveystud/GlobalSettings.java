@@ -8,6 +8,9 @@ import android.content.SharedPreferences;
  */
 public class GlobalSettings {
 
+    //-------------------------------------------------------------------------
+    //----------------------------STANDARD SETTINGS----------------------------
+    //-------------------------------------------------------------------------
     final public static long gMinUseDuration    = 15*1000; //15 sec
 
     final public static long gResetShowCounter = 24*60*60*1000; //time in mills
@@ -31,12 +34,14 @@ public class GlobalSettings {
     final public static int gMinIdleHours = 1;
     final public static int gMaxIdleHours = 8;
 
-    final public static State gDefaultMainSerrvice = State.ON;
+    final public static State gDefaultMainService = State.ON;
 
 
 
 
-    //Additional Settings:
+    //-------------------------------------------------------------------------
+    //---------------------------ADDITIONAL SETTINGS---------------------------
+    //-------------------------------------------------------------------------
     final public static long gTouchEventWait =  30*1000;
 
     final public static long gGPSEventWait = 5000;

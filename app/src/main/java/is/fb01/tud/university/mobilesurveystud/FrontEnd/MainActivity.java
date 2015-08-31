@@ -52,8 +52,8 @@ public class MainActivity extends Activity {
         if(useMainService == GlobalSettings.State.UNDEFINED) {
             SharedPreferences.Editor editor = mSharedPref.edit();
 
-            editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainSerrvice.toString());
-            useMainService = GlobalSettings.gDefaultMainSerrvice;
+            editor.putString(getString(R.string.setting_is_active), GlobalSettings.gDefaultMainService.toString());
+            useMainService = GlobalSettings.gDefaultMainService;
 
             editor.commit();
         }
@@ -166,10 +166,7 @@ public class MainActivity extends Activity {
             long lChoosenNumb = np.getValue();
             long lIdleTime = lChoosenNumb * 1000 * 60 * 60;
 
-            SharedPreferences.Editor editor = mSharedPref.edit();
-            editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
-            editor.putBoolean(getString(R.string.is_paused), true);
-            editor.commit();
+            stopMainService(true);
 
 
             try {
@@ -179,10 +176,6 @@ public class MainActivity extends Activity {
             }
 
             mAlarmManager.set(AlarmManager.RTC_WAKEUP, System.currentTimeMillis() + lIdleTime, mAlarmIntent);
-
-            stopService(mMainService);
-
-
 
             Log.v(TAG, "going idle on user demand for: " + lIdleTime);
 
@@ -219,11 +212,7 @@ public class MainActivity extends Activity {
                     public void onClick(DialogInterface dialog, int which) {
                         Toast.makeText(mContext, getString(R.string.settings_toast_stop), Toast.LENGTH_SHORT).show();
 
-                        SharedPreferences.Editor editor = mSharedPref.edit();
-                        editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
-                        editor.commit();
-
-                        stopService(mMainService);
+                        stopMainService(false);
 
                         Runnable r = new Runnable() {
                             @Override
@@ -232,7 +221,7 @@ public class MainActivity extends Activity {
                             }};
 
                         Handler mHandler = new Handler();
-                        mHandler.postDelayed(r, 2000); //wait for slow devices until main is stopped - paranoia - looks better
+                        mHandler.postDelayed(r, 2000); //wait for slow devices until main is stopped - paranoia and looks better
                     }
                 });
 
@@ -246,6 +235,16 @@ public class MainActivity extends Activity {
         dialogBuilder.show();
     }
 
+    private void stopMainService(boolean bIsPause) {
+        SharedPreferences.Editor editor = mSharedPref.edit();
+        editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
+        editor.putBoolean(getString(R.string.is_paused), bIsPause);
+        editor.commit();
+
+        stopService(mMainService);
+    }
+
+    //---------HELPER----------
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
