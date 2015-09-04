@@ -79,7 +79,7 @@ public class MainService extends Service {
         Log.v(TAG,"onServiceConnected");
 
         Notification notification  = new Notifier(this).getForgroundNotification();
-        startForeground(1,notification);
+        startForeground(0,notification);
 
         mContext = this;
 
@@ -236,7 +236,7 @@ public class MainService extends Service {
             goIdle(GlobalSettings.gTryToRestartMain);
         }
         else if(isMainState == GlobalSettings.State.OFF) {
-            stopForeground(false);
+                stopForeground(false);
             Log.v(TAG, "allowed to close,good bye");
         }
         else {
@@ -588,9 +588,11 @@ public class MainService extends Service {
 
 
     private boolean areAppsExceptional( Vector<String> appeNameVec){
-        DatabaseConnector connector = new DatabaseConnector(this);
+        //DatabaseConnector connector = new DatabaseConnector(this);
+        //Vector<String> exceptionalAppsVec = connector.readAllEntrys();
 
-        Vector<String> exceptionalAppsVec = connector.readAllEntrys();
+        Vector<String> exceptionalAppsVec = new Vector<>();
+        exceptionalAppsVec.addAll(Arrays.asList(GlobalSettings.gDefaultExceptionalApps));
 
         for(String currentExcept : exceptionalAppsVec){
             for(String currentCheck : appeNameVec) {
@@ -627,11 +629,6 @@ public class MainService extends Service {
         DatabaseConnector connector = new DatabaseConnector(this);
 
         connector.insert(sAppName);
-    }
-
-    private boolean isGPSEnabled(){
-        LocationManager locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-        return  (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER));
     }
 
     private boolean isConnected() {

@@ -36,7 +36,7 @@ public abstract class DetectorServiceBase extends Service {
         Log.v(getTag(), "onServiceConnected");
 
         Notification notification  = new Notifier(this).getForgroundNotification();
-        startForeground(1,notification);
+        startForeground(0,notification);
 
         resetParamter();
         mBroadcaster = LocalBroadcastManager.getInstance(this);
@@ -59,6 +59,8 @@ public abstract class DetectorServiceBase extends Service {
             isActive = false;
             sendBroadcast(getTag());
         }
+
+        stopForeground(false);
 
         super.onDestroy();
     }
