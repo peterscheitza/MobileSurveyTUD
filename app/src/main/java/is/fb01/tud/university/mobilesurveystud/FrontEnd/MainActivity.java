@@ -22,7 +22,10 @@ import is.fb01.tud.university.mobilesurveystud.BackEnd.Service.MainService;
 import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 import is.fb01.tud.university.mobilesurveystud.R;
 
-
+/**
+ * Bei der MainActivity handelt es sich um den initialen Eintrittspunkt in die Anwendung (siehe das Kapitel „AndoridManifest“),
+ * die alle für den Umfrageteilnehmer relevanten Einstellungen bereitstellt.
+ */
 public class MainActivity extends Activity {
 
     public static final String PACKAGE_NAME = "is.fb01.tud.university.mobilesurveystud";
@@ -37,7 +40,15 @@ public class MainActivity extends Activity {
     private AlarmManager mAlarmManager;
     private PendingIntent mAlarmIntent;
 
-
+    /**
+     * Zunächst werden hier die SharedPreferences gelesen und gegebenfalls der MainService gestartet
+     *
+     * Als nächstes wird der AlaramManager und alle benötigten Daten Inizialisert um den Service zu pausieren
+     *
+     * Abschließend wird der Numberpicker (Auswahl an Stunden, die die ANwendung pasuiert werden soll) inizialisiert
+     *
+     * @param savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -45,6 +56,7 @@ public class MainActivity extends Activity {
 
         mContext = this;
 
+        //READ DATA AND START SERVICE IF NEEDED
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
         GlobalSettings.State useMainService = readEnum(R.string.setting_is_active);
 
@@ -64,13 +76,13 @@ public class MainActivity extends Activity {
         if(!isServiceRunning(MainService.class) && useMainService == GlobalSettings.State.ON )
             startService(mMainService);
 
+        //ALARM
         Intent intent = new Intent(this, MainService.class);
         mAlarmIntent = PendingIntent.getService(this, 0, intent, 0);
         mAlarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
 
-
-        //Front End
+        //NUMBERPICKER
         NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker1);
         int arrayRange = GlobalSettings.gMaxIdleHours - GlobalSettings.gMinIdleHours + 1;
         String[] nums = new String[arrayRange];
@@ -84,42 +96,24 @@ public class MainActivity extends Activity {
         np.setValue(GlobalSettings.gMinIdleHours);
     }
 
-
-  /*  @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }*/
-
+    /**
+     * Sollte die ANwendung wieder Fortgesetzt werden kann sich der MainService beendent haben und somit muss das
+     * ForntEnd geupdatet werden
+     */
     @Override
     public void onResume(){
         super.onResume();
 
-        /*
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED);
-        getWindow().addFlags(WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);*/
-
         updateFrontEndText();
     }
 
+    /**
+     * Diese Funktion wird aufgerufen, wenn der Nutzer den MainService an- oder abschalten will
+     *
+     * Sollte der MainService deaktiviert werden wird zuerst ein Dialog angezeigt (siehe Funktion showStopDialog())
+     *
+     * @param v Schaltfläche die gedrückt worden ist
+     */
     public void buttonToggleService(View v){
 
         if(isServiceRunning(MainService.class)){
@@ -138,26 +132,41 @@ public class MainActivity extends Activity {
 
             updateFrontEndText();
 
-            //editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString()); happens in service
+            //happens now in MainService
+            //editor.putString(getString(R.string.setting_is_active), MainService.State.ON.toString());
         }
     }
 
-
+    /**
+     * Diese Funktion wird aufgerufen, wenn der Nutzer die Identifikation speichern will
+     *
+     * @param v Schaltfläche die gedrückt worden ist
+     */
     public void buttonSaveId(View v){
 
         SharedPreferences.Editor editor = mSharedPref.edit();
 
         EditText edittext = (EditText) findViewById(R.id.editText);
-        String sId = edittext.getText().toString();
+        String sId = edittext.getText().toString().trim();
 
+        //only save non-empty strings
         if(!sId.equals("") && sId != null && !sId.isEmpty()) {
             editor.putString(getString(R.string.user_id), sId);
             editor.commit();
 
-            Toast.makeText(this, getString(R.string.settings_toast_save) + sId , Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.settings_toast_save) + " " + sId , Toast.LENGTH_SHORT).show();
         }
     }
 
+    /**
+     * Diese Funktion wird aufgerufen, wenn der Nutzer die Erfssung (und damit auch die Erinnerungen) pasuieren möchte.
+     * Sollte der Service bereits inaktiv sein wird der Nutzer darauf hingewiesen
+     *
+     * Es wird hier mit einem Alaram gearbeitet, der entsprechend der im Numberpicker eingestellten Stunden, den MainService
+     * wieder staret
+     *
+     * @param v Schaltfläche die gedrückt worden ist
+     */
     public void buttonGoIdle(View v) {
 
         if(isServiceRunning(MainService.class)) {
@@ -189,6 +198,9 @@ public class MainActivity extends Activity {
 
     }
 
+    /**
+     * Update der Buttonbeschriftungen und Textboxen
+     */
     private void updateFrontEndText(){
         Button toggleMainButton = (Button) findViewById(R.id.mainToggleService);
 
@@ -202,6 +214,13 @@ public class MainActivity extends Activity {
         edittext.setText(sId);
     }
 
+    /**
+     * Der Nutzer bekommt einen Dialog mit einer "Annehmen"- und einer "Ablehen"-Schaltfläche angezeigt
+     *
+     * Beim Ablehenen passiert nichts
+     *
+     * Beim Annehemn wird der MainServiceBeendet und nach einer Sekunde das FrontEnd upgedatet
+     */
     private void showStopDialog(){
         AlertDialog.Builder dialogBuilder = new AlertDialog.Builder(this);
 
@@ -235,6 +254,11 @@ public class MainActivity extends Activity {
         dialogBuilder.show();
     }
 
+    /**
+     * Diese Funktion stoppt den MainService auf die korrekte weise in dem die SharedPreference setting_is_active auf OFF
+     * gesetzt wird. Dadruch wird von dem MainService keine Alarm zum Neustarten gesetzt
+     * @param bIsPause
+     */
     private void stopMainService(boolean bIsPause) {
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
@@ -244,7 +268,14 @@ public class MainActivity extends Activity {
         stopService(mMainService);
     }
 
+
     //---------HELPER----------
+
+    /**
+     * Prüft ob der Service aktiv ist
+     * @param serviceClass zu prüfender Service
+     * @return
+     */
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
@@ -255,6 +286,11 @@ public class MainActivity extends Activity {
         return false;
     }
 
+    /**
+     * Ließt eine  Enum aus den SharedPreferences
+     * @param iName
+     * @return
+     */
     private GlobalSettings.State readEnum(int iName){
         String optioneName = getString(iName);
         String sEnum = mSharedPref.getString(optioneName, GlobalSettings.State.UNDEFINED.toString());

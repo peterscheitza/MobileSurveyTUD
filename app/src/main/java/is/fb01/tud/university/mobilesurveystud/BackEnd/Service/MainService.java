@@ -12,7 +12,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.location.LocationManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -65,7 +64,7 @@ public class MainService extends Service {
     private SharedPreferences mSharedPref;
     private Handler mToastHandler;
 
-    private DetectorReceiver mLocalBroadcasteReceiver;
+    private DetectorReceiver mDetectorReceiver;
     private BroadcastReceiver mPowerButtonReceiver;
     private BroadcastReceiver mDialogReceiver;
     private BroadcastReceiver mWaitForUnlockReceiver;
@@ -73,6 +72,12 @@ public class MainService extends Service {
     boolean mIsExtendedRunning = false;
     long mNextShowCounterUpdateDue = -1;
 
+    /**
+     * Als Erstes wird die foreground flag gesetzt. Diese sorgt dafür, dass der Service nicht aufgrund von
+     * Speichermangel automatisch beendet wird
+     *
+     * Dann werden alle receiver initialisiert
+     */
     @Override
     public void onCreate() {
         super.onCreate();
@@ -85,8 +90,6 @@ public class MainService extends Service {
 
         mSharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
 
-        SharedPreferences sharedPref = getSharedPreferences(getString(R.string.shared_Pref), Context.MODE_PRIVATE);
-
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.ON.toString());
         editor.putBoolean(getString(R.string.is_paused), false);
@@ -96,70 +99,16 @@ public class MainService extends Service {
 
         initServiceMap();
 
-        mLocalBroadcasteReceiver = new DetectorReceiver(this);
-
-        //Standard Receiver registration
-        /*mLocalBroadcasteReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                String sender = intent.getStringExtra(getString(R.string.sender));
-                String serviceType = intent.getStringExtra(getString(R.string.serviceType));
-                boolean isActive = intent.getBooleanExtra(getString(R.string.is_active), false);
-                long millsStart = intent.getLongExtra(getString(R.string.millsStart), -1);
-                long millsEnd = intent.getLongExtra(getString(R.string.millsEnd), -1);
-
-                Log.v(TAG, "onReceiveMessage from Service: " + sender + " isActive: " + isActive);
-
-                //update
-                if(millsStart > -1)
-                    if (mMillsStart == -1 || millsStart < mMillsStart)
-                        mMillsStart = millsStart;
-
-                if(millsEnd > -1)
-                    if (mMillsEnd < millsEnd)
-                        mMillsEnd = millsEnd;
-
-                if (mServiceMap.containsKey(sender)) {
-                    ServiceStruct struct = mServiceMap.get(sender);
-
-                    struct.isActive = isActive;
-                    if (struct.checkStop(ServiceStruct.stopSituation.INACTIVITY) && !isActive) {
-                        stopService(struct.mIntent);
-                        struct.state = State.OFF;
-                    }
-                } else {
-                    Log.v(TAG, "something went wrong. service not found");
-                    assert false;
-                }
-
-                if (isStandardInactivity()) {
-                    if (!mIsExtendedRunning) {
-                        startServiceEvent(ServiceStruct.startSituation.EXTEND);
-                        mIsExtendedRunning = true;
-                    }
-                }
-
-                boolean isE = isExtendedInactivity();
-                boolean isS = isStandardInactivity();
-                if(isE && !isS)
-                    mIsExtendedRunning = false;
-
-
-                if(!isActive)
-                    isShowADialog();
-
-                //TODO fünf eigene funktionen
-            }
-        };*/
+        mDetectorReceiver = new DetectorReceiver(this);
         IntentFilter localFilter = new IntentFilter(DetectorServiceBase.MSG);
-        LocalBroadcastManager.getInstance(this).registerReceiver(mLocalBroadcasteReceiver, localFilter);
+        LocalBroadcastManager.getInstance(this).registerReceiver(mDetectorReceiver, localFilter);
 
 
         mDialogReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.v(TAG,"onReceiveMessage from Lock Screen Activity");
-                handleShowSurveyFromLockScreen(intent);
+                handleShowSurveyFromLockScreen();
             }
         };
 
@@ -167,26 +116,13 @@ public class MainService extends Service {
             @Override
             public void onReceive(Context context, Intent intent) {
                 Log.v(TAG,"onReceiveMessage from user present");
-
-                Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
-                i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                i.setPackage("com.android.chrome");
-                try {
-                    startActivity(i);
-                } catch (ActivityNotFoundException ex) {
-                    // Chrome browser presumably not installed so allow user to choose instead
-                    i.setPackage(null);
-                    startActivity(i);
-                }
-
-                unregisterReceiver(mWaitForUnlockReceiver);
-
-                goIdle(GlobalSettings.gIdleAfterShow);
+                handleUserPresent();
             }
         };
 
-
+        /**
+         * Receiver der informiert wird wenn der Bildschirmstatus (an/aus) wechselt
+         */
         mPowerButtonReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
@@ -200,21 +136,35 @@ public class MainService extends Service {
         registerReceiver(mPowerButtonReceiver, filterOnOff);
     }
 
+    /**
+     * Wird beim Start des Service aufgerufen und gibt an, dass er im Fall eines automatischen
+     * Beendens wieder startet
+     * @param intent
+     * @param flags
+     * @param startId
+     * @return der return value setzt die Flag zum neustarten
+     */
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         return START_STICKY;
     }
 
+    /**
+     * Sicherheitshalber werden alle Receiver abgemeldet um sicherzugehen das keiner mehr aktiv sind
+     *
+     * Dann werden alle Detektoren abegeschaltet, indem alle Stopsituationen angenommen werden
+     *
+     * Abschließend wird geprüft ob settingIsActive auf OFF gesetzt wurde. In dem Fall darf der MainService
+     * beendet werden. Sollte dies nicht der Fall sein wurde der Service außerplanmäßig beendet wurde. Dann
+     * versucht sich der Service nach 30 Skeunden wieder zu starten.
+     *
+     * Beim Beenden des Service wird die Foregorund Flag entfernt
+     */
     @Override
     public void onDestroy() {
-
-        super.onDestroy();
-
         Log.v(TAG,"onServiceClose");
 
-        //LocalBroadcastManager.getInstance(this)....
-        //paranoia: all receiver
-        try{ LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mLocalBroadcasteReceiver);}
+        try{ LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDetectorReceiver);}
         catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
         try{LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);}
         catch (IllegalArgumentException e) { Log.v(TAG, e.toString()); }
@@ -243,7 +193,7 @@ public class MainService extends Service {
             Log.v(TAG, "could not get service state, close for safety reasons");
         }
 
-        //super.onDestroy();
+        super.onDestroy();
     }
 
     @Override
@@ -251,10 +201,11 @@ public class MainService extends Service {
         return null;
     }
 
-
-
-
-
+    /**
+     * Erstellen des ServiceHandler(Map) und füllen mit ServiceStructs und derenen Start- und Stopsituationen
+     *
+     * Abschließend wird angenommen das der Bildschirm an ist um initial zu testen, ob Aktivität vorliegt
+     */
     private void initServiceMap(){
 
         mServiceMap = new ServiceHandler(this);
@@ -278,6 +229,10 @@ public class MainService extends Service {
         startServiceEvent(ServiceStruct.startSituation.SCREEN_ON);
     }
 
+    /**
+     * Stoppt alle Services mit der übergebenen Stopsituation
+     * @param stop
+     */
     public void stopServiceEvent(ServiceStruct.stopSituation stop) {
 
         Log.v(TAG,"stopServiceEvent: " + stop );
@@ -291,6 +246,10 @@ public class MainService extends Service {
         }
     }
 
+    /**
+     * Startet alle Service mit der übergebenen Startsituation
+     * @param start
+     */
     public void startServiceEvent(ServiceStruct.startSituation start) {
 
         Log.v(TAG,"startServiceEvent: " + start );
@@ -305,12 +264,11 @@ public class MainService extends Service {
     }
 
 
-
-
-
-
-
-
+    /**
+     * Funktion für mPowerButtonReceiver
+     * Startet und Stoppt alle Service, die von dem Bildschirmstatus abhängen
+     * @param intent
+     */
     private void handlePowerButton(Intent intent){
         Log.v(TAG,"screen turned off/on");
 
@@ -325,7 +283,15 @@ public class MainService extends Service {
         }
     }
 
-    private void handleShowSurveyFromLockScreen(Intent intent) {
+    /**
+     * Funktion für mDialogReceiver
+     *
+     * Wenn der Nutzer auf der auf dem Sperrbildschirm angezeigten Erinnerung den Fragebogen sehen möchte
+     * Hierzu wird ein Intent gesendet und diese Funktion aufgerufen
+     * Dann wird der mWaitForUnlockReceiver angemeldet der darauf wartet, das der Nutzer die
+     * Sperrung des Gerätes aufhebt
+     */
+    private void handleShowSurveyFromLockScreen() {
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(this.mDialogReceiver);
 
@@ -334,11 +300,40 @@ public class MainService extends Service {
         registerReceiver(mWaitForUnlockReceiver,filterUserPresent);
     }
 
+    /**
+     * Funktion für mWaitForUNlockreceiver
+     *
+     * Nachdem der Nutzer vom Sperrbildschirm aus die Umfrage sehen möchte
+     * muss er sein Gerät entsperren. Nachdem er das getan hat wird in
+     * Chrome (oder dem Standardbrowser) die Umfrage angezeigt
+     *
+     * Zusätzlich werden die unbenötigten Receiver abgemeldet und der MainService
+     * (damit auch die Erfassung von Daten) für 30 min pausiert
+     */
+    private void handleUserPresent() {
+
+        Intent i = new Intent(Intent.ACTION_VIEW);
+        i.setData(Uri.parse(GlobalSettings.gGetURLWithID(mContext)));
+        i.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.setPackage("com.android.chrome");
+        try {
+            startActivity(i);
+        } catch (ActivityNotFoundException ex) {
+            // Chrome browser presumably not installed so allow user to choose instead
+            i.setPackage(null);
+            startActivity(i);
+        }
+
+        unregisterReceiver(mWaitForUnlockReceiver);
+
+        goIdle(GlobalSettings.gIdleAfterShow);
+    }
 
 
-
-
-
+    /**
+     * Prüft ob, laut der ServiceStructs, Inaktivität vorliegt
+     * @return
+     */
     private boolean isInactivity(){
         for ( ServiceStruct serviceStruct : mServiceMap.values()) {
             if(serviceStruct.state == GlobalSettings.State.ON) {
@@ -349,37 +344,29 @@ public class MainService extends Service {
         return true;
     }
 
-    private boolean isStandardInactivity(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == GlobalSettings.State.ON && !serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
-                if(serviceStruct.isActive)
-                    return false;
-            }
-        }
-        return true;
-    }
-
-    private boolean isExtendedInactivity(){
-        for ( ServiceStruct serviceStruct : mServiceMap.values()) {
-            if(serviceStruct.state == GlobalSettings.State.ON && serviceStruct.checkStart(ServiceStruct.startSituation.EXTEND)) {
-                if(serviceStruct.isActive)
-                    return false;
-            }
-        }
-        return true;
-    }
-
-
-
-
-
-
-
+    /**
+     * Zufallsfunktion, die entscheidet, ob der Dialog angezeigt wird
+     *
+     * Ermittelt eine Zufallszahl zwichen 0 und 100 und prüft
+     * ob diese unter dem Schwellwert aus den GlobalSettings liegen
+     * @return
+     */
     private boolean randomFunction(){
         int randomInt = new Random().nextInt(100);
         return randomInt <= GlobalSettings.gPercentageToShow;
     }
 
+    /**
+     * Prüft ob der Dialog angezeigt werden muss und initziert das Anzeigen bei Beadrf
+     *
+     * Es wird in folgender Reihnefolge kontrolliert:
+     * 1 Inaktivität
+     * 2 Minimale Nutzungsdauer erreicht
+     * 3 Zufallsfunktion
+     * 4 Prüfen, ob der Dialog nicht zu oft angezeigt wurde
+     * 5 Prüft, ob unerweünschte Prozesse im Hintergrund laufen
+     * @return
+     */
     public boolean isShowADialog() {
         if(isInactivity()) {
 
@@ -412,9 +399,12 @@ public class MainService extends Service {
         return false;
     }
 
+    /**
+     * Entscheidung, ob die Erinnerung als kleines oder großes Fenster angezeigt wird
+     * Auf dem Sperrbildschirm muss die Erinnerung als Activity angezeigt werden
+     */
     private void showADialog() {
 
-        showToast("Please answer!");
         if (mIsScreenOn) {
             showSystemAlert();
         } else {
@@ -422,13 +412,19 @@ public class MainService extends Service {
         }
     }
 
-
+    /**
+     * Zurücksetzten aller wichtigen Parameter, wenn Inaktivität eingetreten ist
+     */
     private void resetParameter(){
         mMillsStart = -1;
         mMillsEnd = -1;
         mIsExtendedRunning = false;
     }
 
+    /**
+     * Anzeigen der Erinnerung auf dem Sperrbildschirm als Activity
+     * und registrieren des mDialogReceiver
+     */
     private void showActivity() {
         Log.v(TAG, "show dialog activity");
 
@@ -440,6 +436,11 @@ public class MainService extends Service {
         startActivity(i);
     }
 
+    /**
+     * Anzeigen der Umfragen Erinnerung als kleines Dialogfenster
+     * Hierzu wird die DialogAgtivity herangezogen
+     * Zusätzlich werden deie ButtoneListener angemeldet
+     */
     private void showSystemAlert(){
 
         Log.v(TAG, "show dialog");
@@ -500,6 +501,10 @@ public class MainService extends Service {
         new Notifier(this).alert();
     }
 
+    /**
+     * Anzeigen einer Systemnachricht (Toast)
+     * @param sOutput
+     */
     private void showToast(final String sOutput) {
         mToastHandler.post(new Runnable() {
             public void run() {
@@ -510,8 +515,12 @@ public class MainService extends Service {
         Log.v(TAG,sOutput);
     }
 
-
-
+    /**
+     * Zurücksetzen des Zählers, der erhöht wird wenn die Erinnerung angezeigt wird     *
+     *
+     * @param lLastCounterUpdate    Zeitpunkt des letzen Updates
+     * @param lCurrentTimeMills     Aktueller Zeitstempel
+     */
     private void resetShowCounter(long lLastCounterUpdate, long lCurrentTimeMills) {
         Log.v(TAG,"reset show counter");
 
@@ -519,7 +528,8 @@ public class MainService extends Service {
 
         do {
             lNextUpdate += GlobalSettings.gResetShowCounter;
-        } while(lNextUpdate > lCurrentTimeMills);
+            Log.v(TAG,"try to take " + lNextUpdate + " for next update");
+        } while(lNextUpdate < lCurrentTimeMills);
 
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putLong(getString(R.string.nextCounterUpdate), lNextUpdate);
@@ -529,14 +539,20 @@ public class MainService extends Service {
         mNextShowCounterUpdateDue = lNextUpdate;
     }
 
-    //besser als alert
+    /**
+     * Prüft ob der Zähler der Angezeigten Dialogs zurück gesetzt werden muss
+     * Dieses vorgehen ist robuster und energiesapramser als mit dem AlertManager
+     * Der Zeitpunkt des letzten Updates wird auch als Member in diesem Service gespeichert
+     * um nicht jedes mal auf die ShardPreference zuzugreifen (nur beim ersten mal)
+     * @return
+     */
     private boolean checkShownCounterUpdate(){
-        if(mNextShowCounterUpdateDue < 0)
-            mNextShowCounterUpdateDue = mSharedPref.getLong(getString(R.string.nextCounterUpdate), 0);
-
         long currentTimeMills = System.currentTimeMillis();
 
-        if(currentTimeMills > mNextShowCounterUpdateDue) {
+        if(mNextShowCounterUpdateDue < 0)
+            mNextShowCounterUpdateDue = mSharedPref.getLong(getString(R.string.nextCounterUpdate), currentTimeMills);
+
+        if(currentTimeMills >= mNextShowCounterUpdateDue) {
             Log.v(TAG,"reset show counter");
 
             resetShowCounter(mNextShowCounterUpdateDue, currentTimeMills);
@@ -546,6 +562,16 @@ public class MainService extends Service {
         return false;
     }
 
+    /**
+     * Prüfen, ob die Erinnerungen nicht zu oft dem Nutzer angezeigt wurden
+     *
+     * Hiezu wird kontrolliert ob der Zähler der angezeigten Erinnerungen nicht
+     * über dem Schwellwert in den GlobalSettings liegt.
+     * Sollte dies nicht der Fall sein wird ein Anzeigen genehmigt und der Zähler
+     * um eins erhöht
+     *
+     * @return  Bool der angbt, ob die Erinnerung angezeigt werden darf
+     */
     private boolean checkShownCounter(){
 
         checkShownCounterUpdate();
@@ -570,23 +596,23 @@ public class MainService extends Service {
                 return false;
             }
 
-
             long lSleepDuration = (lLastCounterUpdate + GlobalSettings.gResetShowCounter) - System.currentTimeMillis();
             goIdle(lSleepDuration);
 
+            Log.v(TAG, "shown dialog to much, wait for: " + lSleepDuration);
 
             stopSelf();
-
-            Log.v(TAG, "shown dialog to much, wait for: " + lSleepDuration);
             return false;
         }
     }
 
-
-
-
-
-
+    /**
+     * Vergeleichen einer Listen von Prozessen mit den unerwünschten Apps aus den GlobalSettings
+     * Diese könnte auch aus dem DatabaseConnector ausgelesen werden, dies wurde aber verworfen
+     *
+     * @param appeNameVec
+     * @return
+     */
     private boolean areAppsExceptional( Vector<String> appeNameVec){
         //DatabaseConnector connector = new DatabaseConnector(this);
         //Vector<String> exceptionalAppsVec = connector.readAllEntrys();
@@ -606,7 +632,11 @@ public class MainService extends Service {
         return false;
     }
 
-
+    /**
+     * Erstellt eine Liste aller Processe die mit hoher Priorität laufen
+     *
+     * @return  List an Prozessen
+     */
     private Vector<String> getForegroundApps() {
 
         Vector<String> toReturn = new Vector<>();
@@ -625,12 +655,11 @@ public class MainService extends Service {
         return toReturn;
     }
 
-    private void addAppToExceptionList(String sAppName) {
-        DatabaseConnector connector = new DatabaseConnector(this);
-
-        connector.insert(sAppName);
-    }
-
+    /**
+     * Prüft ob eine Internetverbindung besteht um den Fragebogen anzuzeigen
+     *
+     * @return boolean
+     */
     private boolean isConnected() {
         ConnectivityManager cm =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -638,9 +667,12 @@ public class MainService extends Service {
         return netInfo != null && netInfo.isConnectedOrConnecting();
     }
 
-
-
-
+    /**
+     * Pausiert die Anwendung mittels eiens AlaramManager
+     * Hierbei wird auch der MainService beendet
+     *
+     * @param lIdleTime Dauer der Pausierung
+     */
     private void goIdle(long lIdleTime){
         SharedPreferences.Editor editor = mSharedPref.edit();
         editor.putString(getString(R.string.setting_is_active), GlobalSettings.State.OFF.toString());
@@ -662,5 +694,11 @@ public class MainService extends Service {
         stopSelf();
 
         Log.v(TAG, "going idle for: " + lIdleTime);
+    }
+
+    private void addAppToExceptionList(String sAppName) {
+        DatabaseConnector connector = new DatabaseConnector(this);
+
+        connector.insert(sAppName);
     }
 }

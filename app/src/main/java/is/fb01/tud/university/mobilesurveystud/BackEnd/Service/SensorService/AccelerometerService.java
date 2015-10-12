@@ -13,6 +13,15 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * Created by peter_000 on 25.05.2015.
+ * Ermittelt wie stark das Gerät beschleunigt wird
+ *
+ * Der AcceleromterService dient dazu, den systemeigenen Beschleunigungssensor auszulesen und auszuwerten. Hierzu implementiert er, wie
+ * auch der GyroscopeService, das Interface SensorEventListener und meldet sich selbst als Listener beim SensorManager an, um Daten zu
+ * erhalten. Die voreingestellte Ausleserate ist ebenfalls auf 200.000 Mikrosekunden (0,2 Sekunden - SENSOR_DELAY_NORMAL ) festgelegt.
+ *
+ * Die onSensorChanged()-Methode wird regelmäßig nach den obigen Zeitabständen aufgerufen und bekommt die aktuellen Beschleunigungswerte
+ * übergeben. Diese werden entsprechend der Vorgabe von AndroidDevelopers genormt und addiert. Daraus ergibt sich die aktuelle
+ * Beschleunigungsintensität.
  */
 public class AccelerometerService extends SensorDetectorServiceBase implements SensorEventListener {
 
@@ -25,11 +34,19 @@ public class AccelerometerService extends SensorDetectorServiceBase implements S
     private double mLastY = 0.0f;
     private double mLastZ = 0.0f;
 
+    /**
+     *
+     * @return Identifikator des Detektor
+     */
     @Override
     public String getTag() {
         return TAG;
     }
 
+    /**
+     * Erzeugen des SensorManagers und Selbst-Anmeldung als Listener
+     * Zusätzlich wird die ungefähre Abtast-Geschwindigkeit vorgegeben
+     */
     @Override
     public final void onCreate() {
         super.onCreate();
@@ -40,7 +57,9 @@ public class AccelerometerService extends SensorDetectorServiceBase implements S
         mSensorManager.registerListener(this, mAcceleromter,GlobalSettings.gAccelEventDelay);
     }
 
-
+    /**
+     * Vor dem Beenden den Listener wieder abmelden
+     */
     @Override
     public void onDestroy() {
 
@@ -49,11 +68,10 @@ public class AccelerometerService extends SensorDetectorServiceBase implements S
         super.onDestroy();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
+    /**
+     * Siehe Beispiel von AndroidDevelopers
+     * @param event
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
 

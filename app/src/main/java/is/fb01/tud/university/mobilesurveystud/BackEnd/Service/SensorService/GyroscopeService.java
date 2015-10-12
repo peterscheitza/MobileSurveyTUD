@@ -12,6 +12,20 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * Created by peter_000 on 25.05.2015.
+ * Ermittelt wie Stark das Gerät geneigt wird bzw. wie Stark es rotiert wird
+ *
+ * Der GyroscopeService implementiert einen SensorEventListener  und kann somit das geräteeigene Gyroskop auslesen. Hierzu wird der
+ * Service in seiner onCreate()-Methode bei dem systemeigenen SensorManager  als Listener für das TYPE_GYROSCOPE registriert. An
+ * dieser Stelle wird dem System auch die gewünschte Ausleserate übergeben, die in den zusätzlichen Einstellungen definiert wird.
+ * Als zielführend hat sich ein Wert von 200.000 Mikrosekunden erwiesen (0,2 Sekunden). Dies entspricht der von der API vorgegebenen
+ * Konstante SENSOR_DELAY_NORMAL und ist eine verhältnismäßig langsame Ausleserate.  Eine solche Rate wird zum Beispiel zur Erkennung
+ * der Bildschirmorientierung genutzt, ist für Spiele aber zu ungenau . Durch die Verwendung einer langsamen Leserate soll der
+ * Stromverbrauch so gering wie möglich gehalten werden.
+ * Desweiteren implementiert der Service das Interface SensorEventListener  und kann somit die Sensor Events des Gyroskops empfangen.
+ * Hierzu definiert der Service die Funktion onSensorChanged(..) des Listeners und wertet die in einem Intent  übergebenen XYZ-Werte aus.
+ * Diese werden entsprechend des Tutorials von AndroidDevelopers genormt, um den DeltaRotationsVector und die DeltaRotationsMatrix zu
+ * erhalten. Aus der Matrix werden anschließend die Winkel der aktuellen Geräteposition berechnet und auf ein Intervall von 0 bis 2 π
+ * genormt. Addiert ergeben diese drei Winkel den Wert der aktuellen Rotations-intensität.
  */
 public class GyroscopeService extends SensorDetectorServiceBase implements SensorEventListener{
 
@@ -24,11 +38,19 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
     private final float[] deltaRotationVector = new float[4];
     private float timestamp;
 
+    /**
+     *
+     * @return Identifikator des Detektor
+     */
     @Override
     public String getTag() {
         return TAG;
     }
 
+    /**
+     * Erzeugen des SensorManagers und Selbst-Anmeldung als Listener
+     * Zusätzlich wird die ungefähre Abtast-Geschwindigkeit vorgegeben
+     */
     @Override
     public final void onCreate() {
         super.onCreate();
@@ -37,12 +59,11 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
         mGyroscope = mSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
 
         mSensorManager.registerListener(this, mGyroscope, GlobalSettings.gGyroEventDelay );
-
-        //TODO nicht benötit- in base
-        mLastUpdate = System.currentTimeMillis();
     }
 
-
+    /**
+     * Vor dem Beenden den Listener wieder abmelden
+     */
     @Override
     public void onDestroy() {
         mSensorManager.unregisterListener(this);
@@ -50,11 +71,10 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
         super.onDestroy();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) {
-        return null;
-    }
-
+    /**
+     * Siehe Beispiel von AndroidDevelopers
+     * @param event
+     */
     @Override
     public void onSensorChanged(SensorEvent event) {
 
@@ -103,27 +123,19 @@ public class GyroscopeService extends SensorDetectorServiceBase implements Senso
         double eulerZ = Math.atan2(deltaRotationMatrix[3],deltaRotationMatrix[0]);
 
         double normEulerX = Math.abs(eulerX);
-        double normEulerY = Math.abs(eulerY * 2);             //!!!!!!!!!!!!!! intevall geändert
+        double normEulerY = Math.abs(eulerY * 2);
         double normEulerZ = Math.abs(eulerZ);
 
-        mDetectedSensorSum += normEulerX + normEulerY + normEulerZ;// - (Math.PI * 3);
+        mDetectedSensorSum += normEulerX + normEulerY + normEulerZ;
     }
 
+    /**
+     * nicht relevant
+     * @param sensor
+     * @param accuracy
+     */
     @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
     }
-
-
-    private float[] absMatrixDiff(float[] m1, float[]m2){
-        int matrixSize = m1.length;
-
-        float[] toReturn = new float[matrixSize];
-
-        for(int i = 0; i < matrixSize; i++) {
-            toReturn[i] = Math.abs(m1[i] - m2[i]);
-        }
-        return toReturn;
-    }
-
 }

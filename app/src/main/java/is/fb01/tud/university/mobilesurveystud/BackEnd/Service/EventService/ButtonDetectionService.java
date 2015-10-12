@@ -25,7 +25,7 @@ import is.fb01.tud.university.mobilesurveystud.GlobalSettings;
 
 /**
  * DEPRECATED
- * We do not need to detect serveral hardware buttons
+ * We do not need to detect serveral hardware buttons (to rar use)
  * this class should detect with an overlay the BACK and RECENT button presses (not working)
  * and
  * the hardware button presses of the volume buttons (working)

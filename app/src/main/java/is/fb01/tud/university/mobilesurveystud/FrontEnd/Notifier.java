@@ -23,6 +23,10 @@ import is.fb01.tud.university.mobilesurveystud.R;
 
 /**
  * Created by peter_000 on 12.06.2015.
+ * Sammlung der in der Anwendung benötigten Notifications
+ *
+ * Der Notifier dient der Bündelung aller Arten von Notifications. Eine Notification dient der Nutzerinformation zu einem
+ * Sachverhalt über die Anwendungsgrenzen hinaus und muss dem Betriebssystem übergeben werden.
  */
 public class Notifier {
 
@@ -32,10 +36,20 @@ public class Notifier {
 
     private Context mContext;
 
-    public Notifier(Context c){
+    /**
+     * Konstruktor
+     * @param c Context zum Erzeugen der Notification und des Managers
+     */
+    public Notifier(Context c)
+    {
         mContext = c;
     }
 
+    /**
+     * Notification zur benachichtigung des Nutzer wenn dieser zur Umfrage aufgefordert wird
+     *
+     * Es werden der Standardsound und Vibration genutzt
+     */
     public void alert(){
         Log.v(TAG, "notification");
 
@@ -49,6 +63,12 @@ public class Notifier {
         mNotificationID++;
     }
 
+    /**
+     * Erzeugt die Notification die beim setzten der Foreground Flag übergeben werden muss
+     *
+     * Sie ist nur visuell in der Statusleiste sichtbar und führt zur MainActivity
+     * @return
+     */
     public Notification getForgroundNotification(){
 
         Intent notificationIntent = new Intent(mContext, MainActivity.class);

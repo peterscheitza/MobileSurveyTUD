@@ -3,31 +3,31 @@
 
 
     <string name="settings_upper"><b>Pausieren</b> \nHier können Sie die Umfrageerinnerungen für einige Stunden abstellen, um nicht gestört zu werden oder Energie zu sparen. \nNach der angegeben Zeit starten die Erinnerungen wieder selbstständig.</string>
-    <string name="settings_lower"><b>Einstellungen</b> \nBitte geben Sie hier die erhaltenen Identifikationsnummer ein und bestätigen Sie diese mit \'Speichern\'</string>
+    <string name="settings_lower"><b>Einstellungen</b> \nBitte geben Sie hier die erhaltene Umfragenummer ein und bestätigen Sie diese mit \'Speichern\'</string>
 
     <string name="settings_pause_button">Pausieren</string>
     <string name="settings_hours">Stunden</string>
 
-    <string name="settings_iddefault">Ident.</string>
+    <string name="settings_iddefault">Umf.</string>
     <string name="settings_save_button">Speichern</string>
 
-    <string name="settings_start_button">Erinnerungen an  </string>
+    <string name="settings_start_button">Erinnerungen an</string>
     <string name="settings_stop_button">Erinnerungen aus</string>
 
     <string name="settings_stop_dialog_head">Umfrage-App dauerhaft stoppen</string>
-    <string name="settings_stop_dialog_body">Sind Sie sicher, dass sie die Umfrageerinnerungen dauerhaft abstellen wollen? Sie müssen die Erinnerungen wieder manuel anschalten</string>
+    <string name="settings_stop_dialog_body">Sind Sie sicher, dass Sie die Umfrageerinnerungen dauerhaft abstellen wollen? Sie müssen die Erinnerungen wieder manuel aktivieren.</string>
 
     <string name="settings_toast_start">Starte Dienst</string>
     <string name="settings_toast_stop">Dienst angehalten</string>
-    <string name="settings_toast_save">Speichere ID: </string>
-    <string name="settings_toast_paused">Pausiere Umfrage für </string>
+    <string name="settings_toast_save">Speichere ID:</string>
+    <string name="settings_toast_paused">Pausiere Umfrage für</string>
     <string name="settings_toast_is_paused">Umfrageerinnerungen sind bereits deaktiviert</string>
 
 
     <string name="title_activity_dialog">DialogActivity</string>
 
-    <string name="dialog_head">Umfragenerinnerung</string>
-    <string name="dialog_body">Bitte beantworten Sie die folgende Umfrage</string>
+    <string name="dialog_head">Umfrageerinnerung</string>
+    <string name="dialog_body">Bitte beantworten Sie die folgende Umfrage.</string>
     <string name="dialog_goto_button">Zur Umfrage</string>
     <string name="dialog_exit_button">Später</string>
 
